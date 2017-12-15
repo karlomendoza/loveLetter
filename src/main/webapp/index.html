@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link type="text/css" href="css/default.css?123" rel="stylesheet" />
+    <link type="text/css" href="css/smoothness/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+    <script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.8.22.custom.min.js"></script>
+    <script type="text/javascript" src="js/wsclient.js?2032"></script>
+    <script type="text/javascript" src="js/util.js"></script>
+    <title>RND889</title>
+
+</head>
+<body>
+<div id="container" class="row">
+    <div class="column leftPanel">
+        <div class="userInfo">
+            <span class="disconnected" id="status">Desconectado</span>
+            Nombre: <input type="text" id="userName"/><span class="onLineUserName"></span>
+        </div>
+        <div>
+            <button id="connect" onclick="wsclient.connect(document.getElementById('userName').value);">Conectar</button>
+            <button id="disconnect" disabled="disabled" onclick="wsclient.disconnect();">Desconexión</button>
+        </div>
+        <div>
+        	<div id="actionButtons">
+        	
+        	</div>
+        	<button id="newGame" onclick="wsclient.newGame(); this.style='display: none;';">New Game</button>
+        	Action: 
+
+        </div>
+        <div id="onLineUsersPanel">
+            <h3>Usuarios conectados:</h3>
+            <ul id="onlineUsers">
+
+            </ul>
+        </div>
+        <div id="discard" class="discardCards"></div>
+    </div>
+    <div class="column rightPanel container">
+	    <div id="playerArea" class="row content-1"></div>
+	    <div id="cardsSelectorDiv" class="hidden imgSelector">
+	    	<p>Select the card you thing your opponent has</p>
+			<img src="img/PRIEST.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/BARON.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/HANDMAID.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/PRINCE.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/KING.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/COUNTESS.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+			<img src="img/PRINCESS.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
+		</div>
+	    <div id="gameArea" class="row content-2"></div>
+	    
+	    <div id="conversations" class="ui-tabs ui-widget ui-widget-content ui-corner-all content-3" style="visibility: visible;">
+		    <div id="messageBoardArea" class="conversation ui-tabs-panel ui-widget-content ui-corner-bottom">
+		    	<p id="messages" class="messages"></p>
+		    </div>
+	    </div>
+	</div>
+</div>
+<div id="othersImg" class="hidden">
+	<img src="img/GUARD.png"/>
+ 	<img src="img/playerOutOfRound.png"/>
+	<img src="img/player.png"/>
+</div>
+</body>
+</html>

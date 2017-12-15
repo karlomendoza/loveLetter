@@ -1,0 +1,171 @@
+body {
+    font: 14px comic sans ms, sans-serif;
+    color: #333;
+}
+
+input {
+    border: 1px solid #AAA;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+button, textarea {
+    font-family: comic sans ms, sans-serif;
+}
+
+div#container {
+    width: 100%;
+}
+
+span#status {
+    padding: 0 0 0 20px;
+    display: block;
+}
+
+div#onLineUsersPanel {
+    visibility: hidden;
+    padding: 20px 0;
+}
+
+span.disconnected {
+    background: url('../img/disconnected.png') no-repeat left;
+}
+
+span.connected {
+    background: url('../img/connected.png') no-repeat left;
+}
+
+div#conversations {
+    width: 100%;
+    height: 200px;
+    font: 1.1em comic sans ms, sans-serif;
+    visibility: hidden;
+    float: right;
+}
+
+div#conversations div.conversation {
+    padding: 2px;
+}
+
+p.messages {
+    height: 200px;
+    overflow-y: auto;
+}
+
+p.messages div.message {
+    padding: 2px;
+    background-color: #F3F3F3;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+p.messages div.message span {
+    color: #999;
+}
+
+p.messages div.message p {
+    padding: 3px 0;
+    margin: 0;
+}
+
+div.conversation textarea {
+    width: 330px;
+    height: 60px;
+}
+
+span.onLineUserName {
+    font-weight: bold;
+    visibility: hidden;
+}
+
+ul#onlineUsers {
+    padding: 0;
+    margin: 5px 0;
+}
+
+ul#onlineUsers li a {
+    width: 190px;
+    cursor: pointer;
+    display: block;
+    padding: 3px;
+    background: #ddd;
+    color: #444;
+    margin: 2px 0;
+}
+
+ul#onlineUsers li a:hover {
+    color: #d27435;
+    background: #bbb;
+}
+
+
+div.selectedPlayer {
+  border: 1px solid rgb(86, 180, 239);
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05) inset, 0px 0px 8px rgba(82, 168, 236, 0.6);
+}
+
+div.unSelected {
+  border: 1px solid;
+  box-shadow: 0px 1px 3px;
+}
+
+img.cardPlayedSelected{
+	border: 3px solid rgb(86, 180, 239);
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05) inset, 0px 0px 8px rgba(82, 168, 236, 0.6);
+}
+
+img.cardGuessSelected{
+  border: 3px solid rgb(86, 180, 239);
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05) inset, 0px 0px 8px rgba(82, 168, 236, 0.6);
+}
+
+div.leftPanel {
+     width: 25%;
+}
+div.rightPanel {
+	width: 70%;
+}
+
+.playAreaContainer {
+	 height: 33%;
+}
+
+#gameArea{
+	width: 100%;
+	padding-top: 5px;
+}
+
+div.hidden {
+    display: none;
+}
+
+div.imgSelector {
+	border: 1px solid rgb(86, 180, 239);
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05) inset, 0px 0px 8px rgba(82, 168, 236, 0.6);
+}
+
+div.imgSelector img {
+	width: 11%;
+}
+
+.inHandCarts {
+	width: 15%;
+}
+
+.column {
+    float: left;
+    width: 50%;
+    padding: 2px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.discardCards{
+	 position:relative;
+	 width: 55%;
+}
