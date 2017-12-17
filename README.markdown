@@ -1,24 +1,24 @@
-# EJEMPLO DE WEBSOCKETS Y TOMCAT 7 #
+# Love letter online
+This is a version of the card game love letter, it uses websockets to distribute the game state to each player.
+Actions are send to the server as a JSon. 
 
-Ejemplo de chat creado con WebSockets y Tomcat 7
 
-## Entorno: ##
+## Used languages: ##
 
-* JDK 1.6
+* JDK 1.8
 * Maven 3
 * Apache Tomcat 7.0.29
 * jQuery 1.7.2
 * jQuery-UI 1.8.22
 
-## Instalación ##
+## How to use it ##
 
-* Ejecutar el comando: **mvn clean install** en el directorio del proyecto (pom.xml)
-* Copiar el fichero **websockets.war** que se habrá creado en el directorio target/ del proyecto en el directorio **webapps/** de Tomcat 7
-* Arrancar Apache Tomcat 7
-* Acceder con un **navegador con soporte de WebSockets** a http://localhost:8080/websockets/
-* Enjoy!
+Do a mvn clean install
+Copy the websockets.war from the target/ directory to your tomcat 7 webapps/ directory
+Start tomcat 7
+Go to http://localhost:8080/websockets/
 
-## Tutorial ##
-[WebSockets con Java y Tomcat 7](http://www.adictosaltrabajo.com/tutoriales/tutoriales.php?pagina=WebSocketsJavaTomcat)
+Select a name, click on connect, and when other players join, click on new game.
 
-![](http://www.adictosaltrabajo.com/wp-content/uploads/tutorial-data/WebSocketsJavaTomcat/WebSocketsTomcatConversacion.png)
+## How to play the game ##
+https://youtu.be/k2YUYPDq7gQ?t=1m

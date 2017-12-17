@@ -1,4 +1,4 @@
-package com.autentia.tutorial.websockets.messages;
+package mx.k3m.games.loveletter.messages;
 
 public class MessageInfoMessage {
 

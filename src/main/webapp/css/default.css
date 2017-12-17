@@ -120,10 +120,14 @@ img.cardGuessSelected{
 }
 
 div.leftPanel {
-     width: 25%;
+     width: 15%;
 }
+div.centerPanel {
+	width: 50%;
+}
+
 div.rightPanel {
-	width: 70%;
+	width: 29%;
 }
 
 .playAreaContainer {
@@ -163,6 +167,15 @@ div.imgSelector img {
     content: "";
     display: table;
     clear: both;
+}
+
+.deckDiscardWrapper{
+	 position:relative;
+}
+
+.deckCards{
+	 position:absolute;
+	 width: 55%;
 }
 
 .discardCards{

@@ -24,11 +24,9 @@
         </div>
         <div>
         	<div id="actionButtons">
-        	
         	</div>
-        	<button id="newGame" onclick="wsclient.newGame(); this.style='display: none;';">New Game</button>
+        	<button id="newGame" onclick="wsclient.newGame();">New Game</button>
         	Action: 
-
         </div>
         <div id="onLineUsersPanel">
             <h3>Usuarios conectados:</h3>
@@ -38,8 +36,9 @@
         </div>
         <div id="discard" class="discardCards"></div>
     </div>
-    <div class="column rightPanel container">
-	    <div id="playerArea" class="row content-1"></div>
+    <div class="column centerPanel container">
+	    <div id="playerArea" class="row">
+	    </div>
 	    <div id="cardsSelectorDiv" class="hidden imgSelector">
 	    	<p>Select the card you thing your opponent has</p>
 			<img src="img/PRIEST.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
@@ -51,13 +50,16 @@
 			<img src="img/PRINCESS.png" onclick="markSelectedUnselected(this, 'cardGuessSelected')"/>
 		</div>
 	    <div id="gameArea" class="row content-2"></div>
-	    
-	    <div id="conversations" class="ui-tabs ui-widget ui-widget-content ui-corner-all content-3" style="visibility: visible;">
+	</div>
+	<div class="column rightPanel">
+    	<div id="conversations" class="ui-tabs ui-widget ui-widget-content ui-corner-all content-3" style="visibility: visible;">
 		    <div id="messageBoardArea" class="conversation ui-tabs-panel ui-widget-content ui-corner-bottom">
 		    	<p id="messages" class="messages"></p>
 		    </div>
-	    </div>
-	</div>
+		    <div id="deck" class="deckCards"></div>
+		</div>
+		
+    </div>
 </div>
 <div id="othersImg" class="hidden">
 	<img src="img/GUARD.png"/>

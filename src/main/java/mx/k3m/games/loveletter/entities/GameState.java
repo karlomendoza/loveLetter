@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import com.autentia.tutorial.websockets.messages.GameStatusInfoMessage;
+import mx.k3m.games.loveletter.messages.GameStatusInfoMessage;
 
 @ApplicationScoped
 public class GameState {
@@ -95,13 +95,14 @@ public class GameState {
 		if (card.equals(Card.HANDMAID) || card.equals(Card.COUNTESS) || card.equals(Card.PRINCESS))
 			cardUsedRequiresTarget = false;
 
-		// TODO there is a bug still in here where all the remaining players has
-		// handMaid protection
-		// and the player can only target himself, or does´t have a valid target for his
-		// card, then he
-		// can just throw it out. This needs to be addressed somewhere in here vvv
+		if (card.equals(Card.PRINCE) || card.equals(Card.KING)) {
+			if (player.getHand().getCards().contains(Card.COUNTESS)) {
+				arm.setPrivateMessage("You can't play the " + card.getName() + " if you have also the " + Card.COUNTESS
+						+ " on your hand.");
+				return arm;
+			}
+		}
 
-		// TODO bug con condesa que permite usar rey o principe
 		if (!player.equals(playerOnTurn)) {
 			arm.setPrivateMessage("You are not the current player on turn");
 			return arm;
@@ -116,6 +117,10 @@ public class GameState {
 			}
 			if (target.getHandMaidProtection()) {
 				arm.setPrivateMessage("Your target has protection from the handMaid,  choose another player");
+				return arm;
+			}
+			if (!target.getActiveInRound()) {
+				arm.setPrivateMessage("Your target is out of the round, choose another player");
 				return arm;
 			}
 
@@ -154,8 +159,8 @@ public class GameState {
 
 		if (playerCanOnlyDumpCard) {
 			// what, nothing to du
-			arm.setPrivateMessage("Player : " + player.getName() + " dumped card: " + card.getName()
-					+ " since he has no valid targets");
+			arm.setPrivateMessage(
+					player.getName() + " dumped card: " + card.getName() + " since he has no valid targets");
 			arm.setPublicMessage(arm.getPrivateMessage());
 		} else {
 			switch (card) {
@@ -165,28 +170,25 @@ public class GameState {
 				if (target.getCardNumber() == targetCard.getNumber()) {
 					deck.discard.add(target.getCard());
 					target.setActiveInRound(false);
-					arm.setPrivateMessage("Player : " + player.getName() + " used card: " + card.getName()
-							+ " on user: " + target.getName() + " he is now out of the round, he had card : "
-							+ target.getCard());
+					arm.setPrivateMessage(player.getName() + " used a " + card.getName() + " guessing "
+							+ targetCard.getName() + " on " + target.getName() + " he is out of the round.");
 					arm.setPublicMessage(arm.getPrivateMessage());
 				} else {
-					arm.setPrivateMessage("Player : " + player.getName() + " used card: " + card.getName()
-							+ " guessing card: " + targetCard.getName() + " on user: " + target.getName()
-							+ "he is still in the round");
+					arm.setPrivateMessage(player.getName() + " used a " + card.getName() + " guessing "
+							+ targetCard.getName() + " on " + target.getName() + " he did not had that card.");
 					arm.setPublicMessage(arm.getPrivateMessage());
 				}
 				break;
 			case PRIEST:
 				System.out.println("player: " + target.getName() + "has card: " + target.getCard());
-				arm.setPrivateMessage("The card of player : " + target.getName() + " is : " + target.getCard());
-				arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName() + " on user: "
-						+ target.getName());
+				arm.setPrivateMessage(target.getName() + " has card : " + target.getCard());
+				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName());
 				break;
 			case BARON:
 				System.out.println("Baron " + target.getName() + " card: " + target.getCard() + " your name: "
 						+ player.getName() + " you card: " + player.getCard());
 
-				String playerOut = "player: Xx is out of the round";
+				String playerOut = "Xx is out of the round";
 				if (player.getCardNumber() < target.getCardNumber()) {
 					deck.discard.add(player.getCard());
 					player.setActiveInRound(false);
@@ -199,32 +201,30 @@ public class GameState {
 					playerOut = "";
 				}
 
-				arm.setPrivateMessage("Target player: " + target.getName() + " has card: " + target.getCard().getName()
-						+ " " + playerOut);
-				arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName() + " on user: "
-						+ target.getName() + playerOut);
+				arm.setPrivateMessage(target.getName() + " has card: " + target.getCard().getName() + " " + playerOut);
+				arm.setPublicMessage(
+						player.getName() + " used a " + card.getName() + " on " + target.getName() + playerOut);
 				break;
 			case HANDMAID:
 				player.activateHandMaidProtection();
 				System.out.println("HandMaid: player has protection");
 				arm.setPrivateMessage("You used handmaid");
-				arm.setPublicMessage(
-						"Player : " + player.getName() + " used card: " + card.getName() + " he is safe for now");
+				arm.setPublicMessage(player.getName() + " used a " + card.getName());
 				break;
 			case PRINCE:
 				deck.discard.add(target.getCard());
 				if (target.getCard().equals(Card.PRINCESS)) {
 					target.setActiveInRound(false);
-					arm.setPrivateMessage("You used Prince on player: " + target.getName()
-							+ " he had the princess, he is out of the round");
-					arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName()
-							+ " on player: " + target.getName() + " he had the princess, he is out of the round");
+					arm.setPrivateMessage(
+							"You used Prince on " + target.getName() + " he had the princess, he is out of the round");
+					arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName()
+							+ " he had the princess and is out.");
 				} else {
 					System.out.println("principe " + target.getName() + "card: " + target.getCard());
 					arm.setPrivateMessage("You used Prince on player: " + target.getName() + " he discarded card: "
 							+ target.getCard().getName());
-					arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName()
-							+ " on player: " + target.getName() + " he discarded card: " + target.getCard().getName());
+					arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName()
+							+ " he discarded a " + target.getCard().getName());
 
 					target.discardCard();
 					target.getHand().getCards().add(deck.drawCard(true));
@@ -241,22 +241,20 @@ public class GameState {
 				player.discardCard();
 				player.getHand().getCards().add(tmpCard);
 
-				arm.setPrivateMessage("You used King on player:" + target.getName() + " you gave him/her card: "
-						+ target.getCard().getName() + " he gave you: " + player.getCard().getName());
-				arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName() + " on player: "
-						+ target.getName());
+				arm.setPrivateMessage("You used King on player:" + target.getName() + " you gave him/her a "
+						+ target.getCard().getName() + " he gave you a: " + player.getCard().getName());
+				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName());
 				break;
 			case COUNTESS:
 				System.out.println("Condesa: ha tirado la condesa, nada pasa");
 				arm.setPrivateMessage("You used the Countess");
-				arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName());
+				arm.setPublicMessage(player.getName() + " used a: " + card.getName());
 				break;
 			case PRINCESS:
 				System.out.println("Princesa: el jugador pierde el juego");
 				player.setActiveInRound(false);
 				arm.setPrivateMessage("You used the Princess, you are out of the round.");
-				arm.setPublicMessage("Player : " + player.getName() + " used card: " + card.getName()
-						+ " he/her is out of the round");
+				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " he/her is out.");
 				break;
 			default:
 				break;
@@ -265,16 +263,14 @@ public class GameState {
 
 		arm.setValidAction(true);
 		if (hasGameEnded() || deck.cards.size() == 1) {
-			Player winnerPlayer = endOfGameProcess();
-			arm.setPrivateMessage(arm.getPrivateMessage() + "\nPlayer: " + winnerPlayer.getName() + " won ");// with
-																												// highest
-																												// card:
-																												// " +
-																												// winnerPlayer.getCard().getName());
-			arm.setPublicMessage(arm.getPublicMessage() + "\nPlayer: " + winnerPlayer.getName() + " won ");// with
-																											// highest
-																											// card: " +
-																											// winnerPlayer.getCard().getName());
+			Player winnerPlayer = selectWinner();
+
+			arm.setPrivateMessage(arm.getPrivateMessage() + "\n " + winnerPlayer.getName() + " won with highest card: "
+					+ winnerPlayer.getCard().getName());
+			arm.setPublicMessage(arm.getPublicMessage() + "\n  " + winnerPlayer.getName() + " won with highest card: "
+					+ winnerPlayer.getCard().getName());
+
+			newRound();
 			return arm;
 		}
 
@@ -306,7 +302,7 @@ public class GameState {
 		return false;
 	}
 
-	private Player endOfGameProcess() {
+	private Player selectWinner() {
 		Player playerWithBiggestCard = null;
 		for (Player player : players) {
 			if (player.getActiveInRound()) {
@@ -318,7 +314,6 @@ public class GameState {
 		// TODO checar desempates y empates
 		playerWithBiggestCard.scoreAWin();
 
-		newRound();
 		return playerWithBiggestCard;
 	}
 

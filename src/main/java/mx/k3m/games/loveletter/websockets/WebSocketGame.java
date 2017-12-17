@@ -1,4 +1,4 @@
-package com.autentia.tutorial.websockets;
+package mx.k3m.games.loveletter.websockets;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,15 +21,13 @@ import org.apache.catalina.websocket.WsOutbound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.autentia.tutorial.websockets.messages.ConnectionInfoMessage;
 import com.google.gson.Gson;
 
 import mx.k3m.games.loveletter.entities.ActionInfoMessage;
 import mx.k3m.games.loveletter.entities.ActionResultMessage;
 import mx.k3m.games.loveletter.entities.GameState;
+import mx.k3m.games.loveletter.messages.ConnectionInfoMessage;
 
-//@ApplicationScoped
-//@ServerEndpoint("/game")
 @WebServlet(urlPatterns = "/game")
 public class WebSocketGame extends WebSocketServlet {
 

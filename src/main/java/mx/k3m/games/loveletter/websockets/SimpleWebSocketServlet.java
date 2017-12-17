@@ -1,4 +1,4 @@
-package com.autentia.tutorial.websockets;
+package mx.k3m.games.loveletter.websockets;
 
 import org.apache.catalina.websocket.MessageInbound;
 import org.apache.catalina.websocket.StreamInbound;

@@ -1,10 +1,12 @@
-package com.autentia.tutorial.websockets;
+package mx.k3m.games.loveletter.websockets;
 
 
-import com.autentia.tutorial.websockets.messages.ConnectionInfoMessage;
-import com.autentia.tutorial.websockets.messages.MessageInfoMessage;
-import com.autentia.tutorial.websockets.messages.StatusInfoMessage;
 import com.google.gson.Gson;
+
+import mx.k3m.games.loveletter.messages.ConnectionInfoMessage;
+import mx.k3m.games.loveletter.messages.MessageInfoMessage;
+import mx.k3m.games.loveletter.messages.StatusInfoMessage;
+
 import org.apache.catalina.websocket.MessageInbound;
 import org.apache.catalina.websocket.StreamInbound;
 import org.apache.catalina.websocket.WebSocketServlet;

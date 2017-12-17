@@ -1,7 +1,7 @@
 var wsclient = (function() {
 
     var ws = null;
-    var wsURI = 'ws://' + location.host  + '/websockets/game';
+    var wsURI = 'ws://' + location.host  + '/loveletter/game';
 
     function connect(userName) {
 
@@ -198,15 +198,12 @@ var wsclient = (function() {
     	
     	if(gameStatus.user.hand.cards.length == 2){
     		attachTriggersToCards = true;
-    		$("#userMessages").value =   "It's your turn, select one of you cards to use!";
-    		
-    		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Do it! </button>;');
     		$("#actionButton").remove();
+    		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Do it! </button>;');
     		$actionButton.appendTo($("#actionButtons"));
     	} else {
     		$("#actionButton").remove();
     		attachTriggersToCards = false;
-    		$('#userMessages').value =   "It's not your turn, plz wait for other users!";
     	}
     	
     	div.html(extractPlayerInfo(gameStatus.user, attachTriggersToCards, 0, true));
@@ -229,6 +226,19 @@ var wsclient = (function() {
 	    	}
 	    	divDiscard.appendTo($('#discard'));
     	}
+
+    	$("#deckCards").remove();
+    	var divDeck = $(document.createElement('div'));
+    	divDeck.attr({id : "deckCards"})
+    	
+    	var cardsRemaining = 15 - gameStatus.discard.length - players.length -1 -1;
+    	
+    	for(var i = 0; i < cardsRemaining; i++ ){
+    		divDeck.html(divDeck.html() + '<img style="position:absolute; left:' + (i*3) + 'px; top:' + (i*3) + 'px; z-index: ' + i  + ';" class="deckCards" src="img/cardBack.png"/>');
+    	}
+    	divDeck.appendTo($('#deck'));
+    	
+    	
     }
     
     function extractPlayerInfo(player, attachTriggersToCards, numberOfOtherPlayers, isUserRender){
@@ -239,11 +249,14 @@ var wsclient = (function() {
     	} else {
     		playerInfo = playerInfo + 'style="width: 100%">';
     	}
-    	playerInfo = playerInfo + '<div value="' + player.name + '" onclick="markSelectedUnselected(this, \'selectedPlayer\')" class="player">Player Name: ' + player.name;
     	
     	if(player.activeInRound){
+    		playerInfo = playerInfo + '<div value="' + player.name + '" onclick="markSelectedUnselected(this, \'selectedPlayer\')" class="player">Player Name: ' + player.name;
+    	
+    	
     		playerInfo = playerInfo + '<img src="img/player.png" style="width: 50px;"/></div>';
     	} else {
+    		playerInfo = playerInfo + '<div value="' + player.name + '" class="player">Player Name: ' + player.name;
     		playerInfo = playerInfo + '<img src="img/playerOutOfRound.png" style="width: 50px;"/></div>';
     	}
     	
@@ -257,7 +270,9 @@ var wsclient = (function() {
 	    		playerInfo = playerInfo + '<img class="inHandCarts" style="padding-right: 5px;" src="img/' +  player.hand.cards[i] + '.png"' + trigger + '/>';
 	    	}
     	} else {
-    		playerInfo = playerInfo + '<img class="inHandCarts" src="img/cardBack.png"/><br/>';
+    		for(var i = 0; i< player.cardsInHand; i++){
+    			playerInfo = playerInfo + '<img class="inHandCarts" style="padding-right: 5px;" src="img/cardBack.png"/>';
+    		}
     	}
     	
     	if(player.handMaidProtection)

@@ -1,6 +1,9 @@
 package com.autentia.tutorial.websockets.messages;
 
 import com.google.gson.Gson;
+
+import mx.k3m.games.loveletter.messages.MessageInfoMessage;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

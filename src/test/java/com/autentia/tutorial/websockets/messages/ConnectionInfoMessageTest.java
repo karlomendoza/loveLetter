@@ -1,6 +1,9 @@
 package com.autentia.tutorial.websockets.messages;
 
 import com.google.gson.Gson;
+
+import mx.k3m.games.loveletter.messages.ConnectionInfoMessage;
+
 import org.junit.Test;
 
 import java.util.Arrays;
