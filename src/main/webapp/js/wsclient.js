@@ -2,7 +2,9 @@ var wsclient = (function() {
 
     var ws = null;
     var wsURI = 'ws://' + location.host  + '/loveletter/game';
-
+    
+    var gameStatus = null;
+    
     function connect(userName) {
 
         if(!userName || userName == '') {
@@ -48,7 +50,10 @@ var wsclient = (function() {
                 }
             } else if (message.gameStatus){
             	updateGameComponents(message.gameStatus);
-            } else{
+            } else if (message.actionStatus){
+            	updateGameComponentsOnAction(message.actionStatus);
+            } 
+            else{
             	var messages = $("#messages");
                 
             	if(message.privateMessage != ''){
@@ -181,7 +186,51 @@ var wsclient = (function() {
         ws.send(JSON.stringify({messageInfo : {from : sender, to : receiver, message : message}}));
     }
     
+    function updateGameComponentsOnAction(action){
+    	if(action.drawCard){
+    		for(var i = 0; i <= gameStatus.playersInfo; i++){
+    			if(action.player == gameStatus.playersInfo[i]){
+    				gameStatus.playersInfo[i].cardsInHand++;
+    			}
+    		}
+    	} else if (action.playCard){
+    		//action.result
+    		switch (action.playedCard) {
+			case "GUARD":
+				 
+				break;
+			case "PRIEST":
+				
+				break;
+
+			case "BARON":
+				
+				break;
+			case "HANDMAID":
+				
+				break;
+			case "PRINCE":
+				
+				break;
+			case "KING":
+				
+				break;
+			case "COUNTESS":
+				
+				break;
+			case "PRINCESS":
+				
+				break;
+			default:
+				break;
+			}
+    		
+		}
+    		action.playedCard
+    }
+    
     function updateGameComponents(gameStatus){
+    	this.gameStatus = gameStatus; 
     	$('.removable').remove();
     	$('.selectedPlayer').remove();
     	$('.cardPlayedSelected').remove();
