@@ -53,10 +53,8 @@ var wsclient = (function() {
 	            	var userMessages = message.gameStatus.user.messages;
 	            	var messages = $("#messages");
 	            	for(var i = 0; i < userMessages.length; i++){
-	            		$('<div class="message"><p>' + $('<p/>').text(userMessages[i]).html() + '</p></div>').appendTo(messages);
+	            		$('<div class="message"><p>' + $('<p/>').text(userMessages[i]).html() + '</p></div>').hide().prependTo(messages).show('normal');
 	        		}
-	            	var element = document.getElementById('messages');
-	            	element.scrollTop = element.scrollHeight - element.clientHeight;
             	}
             	
             	updateGameComponents(message.gameStatus);
@@ -65,18 +63,10 @@ var wsclient = (function() {
             } 
             else{
             	var messages = $("#messages");
-                
             	if(message.privateMessage != ''){
             		//$actionButton = $('<span >' + message.privateMessage +  '</span><br/>');
-            		$('<div class="message"><p>' + $('<p/>').text(message.privateMessage).html() + '</p></div>').appendTo(messages);
+            		$('<div class="message"><p>' + $('<p/>').text(message.privateMessage).html() + '</p></div>').prependTo(messages);
             	}
-            	else if (message.publicMessage != ''){
-            		//$actionButton = $('<span >' + message.publicMessage +  '</span><br/>');
-            		$('<div class="message"><p>' + $('<p/>').text(message.publicMessage).html() + '</p></div>').appendTo(messages);
-            	}
-            	var element = document.getElementById('messages');
-            	element.scrollTop = element.scrollHeight - element.clientHeight;
-            	//$actionButton.appendTo($("#messageBoardArea"));
             }
         }
     }
