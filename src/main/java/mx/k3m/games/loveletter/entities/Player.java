@@ -1,5 +1,8 @@
 package mx.k3m.games.loveletter.entities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Player {
 
 	private String name;
@@ -7,6 +10,7 @@ public class Player {
 	private int numberOfWins;
 	private Boolean handMaidProtection;
 	private Boolean activeInRound;
+	private List<String> messages;
 
 	public Player() {
 
@@ -18,6 +22,7 @@ public class Player {
 		this.handMaidProtection = false;
 		this.hand = new Hand();
 		this.activeInRound = true;
+		this.messages = new ArrayList<>();
 	}
 
 	public void initPlayerForNextRound() {
@@ -70,6 +75,14 @@ public class Player {
 		hand.getCards().remove(card);
 	}
 
+	public void addMessage(String message) {
+		this.messages.add(message);
+	}
+
+	public void removeAllMessages() {
+		this.messages = new ArrayList<>();
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -108,6 +121,14 @@ public class Player {
 
 	public void setHandMaidProtection(Boolean handMaidProtection) {
 		this.handMaidProtection = handMaidProtection;
+	}
+
+	public List<String> getMessages() {
+		return messages;
+	}
+
+	public void setMessages(List<String> messages) {
+		this.messages = messages;
 	}
 
 }

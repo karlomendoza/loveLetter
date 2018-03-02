@@ -67,3 +67,11 @@ function playCard(playerName){
 	
 	wsclient.sendAction(playerName, playerNameSelected, cardNamePlayed, cardNameGuess);
 }
+
+function readyPlayer(){
+	if(document.getElementById('readyInput')){
+		document.getElementById('readyInput').value="false";
+	}  else {
+		document.getElementById('readyInput').value="true";
+	}
+}

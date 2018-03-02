@@ -43,8 +43,6 @@ public class WebSocketGame {
 
 	private static final Logger log = LoggerFactory.getLogger(WebSocketGame.class);
 
-	// private static ApplicationContext appCtx = ApplicationContext.instantiate();
-
 	private static GameState gameState = new GameState();
 
 	@OnOpen
@@ -54,8 +52,8 @@ public class WebSocketGame {
 		// String message = String.format("* %s %s", nickname, "has joined.");
 		// broadcast(message);
 
-		this.userName = session.getQueryString().replaceAll("userName=", ""); // TODO checar si se puede sacar el
-																				// usuario del usuario
+		this.userName = session.getQueryString().replaceAll("userName=", "");
+		// TODO checar si se puede sacar el usuario del usuario
 		this.jsonProcessor = new Gson();
 
 		// TODO implementar broadcast messages
@@ -78,6 +76,15 @@ public class WebSocketGame {
 
 		// TODO aqui agregar carnita
 		if (message.equals("new game")) {
+			// TODO add this validation again
+			// if (gameState.isGameInProgress()) {
+			WebSocketGame userConnection = getActionUserConnection(this.userName);
+			broadcastMessageToUsers(
+					jsonProcessor.toJson(new ActionResultMessage(false, "Can't start a game, one already in progress")),
+					userConnection);
+			// return;
+			// }
+
 			startNewGame();
 			return;
 		}
@@ -88,24 +95,18 @@ public class WebSocketGame {
 			ActionResultMessage actionResultMessage = gameState.takeAction(actionMessage.getUser(),
 					actionMessage.getCardUsed(), actionMessage.getTarget(), actionMessage.getGuardCardGuess());
 
-			if (!actionResultMessage.getValidAction() || (!actionResultMessage.getPrivateMessage().equals(null)
-					&& !actionResultMessage.getPrivateMessage().equals(""))) {
+			if (!actionResultMessage.getValidAction()) {
 				WebSocketGame userConnection = getActionUserConnection(actionMessage.getUser());
-
 				broadcastMessageToUsers(jsonProcessor.toJson(actionResultMessage), userConnection);
-
-				actionResultMessage.setPrivateMessage("");
-				if (actionResultMessage.getPublicMessage() != null
-						&& !actionResultMessage.getPublicMessage().equals(""))
-					broadcastMessageToOtherUsers(jsonProcessor.toJson(actionResultMessage), userConnection);
 			}
 
-			if (actionResultMessage.getValidAction())
+			if (actionResultMessage.getValidAction()) {
 				sendAllUserNewGameState();
+				gameState.removeMessagesFromAllPlayers();
+			}
 		} else {
 			WebSocketGame userConnection = getActionUserConnection(this.userName);
-			broadcastMessageToUsers(
-					jsonProcessor.toJson(new ActionResultMessage(false, "That's cheating sir", "That's cheating sir")),
+			broadcastMessageToUsers(jsonProcessor.toJson(new ActionResultMessage(false, "That's cheating sir")),
 					userConnection);
 		}
 

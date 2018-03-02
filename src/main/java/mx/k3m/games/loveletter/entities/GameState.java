@@ -18,13 +18,16 @@ public class GameState {
 	private Deck deck;
 	private Player playerOnTurn;
 	private int playerNumberOnTurn = 0;
-	private boolean gameHasEnded;
+	private boolean roundHasEnded;
+	private boolean gameInProgress = false;
 
 	public GameState() {
 
 	}
 
 	public void createGame(Set<String> playerNames) {
+		gameInProgress = true;
+
 		List<Player> players = new LinkedList<Player>();
 
 		playerNames.forEach(playerName -> {
@@ -49,7 +52,7 @@ public class GameState {
 
 		playerOnTurn = players.get(playerNumberOnTurn);
 		takeTurn(playerOnTurn);
-		gameHasEnded = false;
+		roundHasEnded = false;
 	}
 
 	public void takeTurn(Player player) {
@@ -71,7 +74,7 @@ public class GameState {
 	// Card targetCard) {
 	public ActionResultMessage takeAction(String playerName, String cardName, String targetName,
 			String targetCardName) {
-		ActionResultMessage arm = new ActionResultMessage(false, "", null);
+		ActionResultMessage arm = new ActionResultMessage();
 		boolean playerCanOnlyDumpCard = false;
 
 		Player player = null;
@@ -158,10 +161,11 @@ public class GameState {
 		player.useCardFromHand(card); // use your card
 
 		if (playerCanOnlyDumpCard) {
-			// what, nothing to du
-			arm.setPrivateMessage(
+			player.addMessage("You dumped Card: " + card.getName() + " since there where no valid targets");
+
+			addMessageToPlayers(player, players,
 					player.getName() + " dumped card: " + card.getName() + " since he has no valid targets");
-			arm.setPublicMessage(arm.getPrivateMessage());
+
 		} else {
 			switch (card) {
 			case GUARD:
@@ -170,19 +174,26 @@ public class GameState {
 				if (target.getCardNumber() == targetCard.getNumber()) {
 					deck.discard.add(target.getCard());
 					target.setActiveInRound(false);
-					arm.setPrivateMessage(player.getName() + " used a " + card.getName() + " guessing "
+
+					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " guessing "
 							+ targetCard.getName() + " on " + target.getName() + " he is out of the round.");
-					arm.setPublicMessage(arm.getPrivateMessage());
+
 				} else {
-					arm.setPrivateMessage(player.getName() + " used a " + card.getName() + " guessing "
+					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " guessing "
 							+ targetCard.getName() + " on " + target.getName() + " he did not had that card.");
-					arm.setPublicMessage(arm.getPrivateMessage());
+
 				}
 				break;
 			case PRIEST:
 				System.out.println("player: " + target.getName() + "has card: " + target.getCard());
-				arm.setPrivateMessage(target.getName() + " has card : " + target.getCard());
-				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName());
+
+				player.addMessage(target.getName() + " has card : " + target.getCard());
+				target.addMessage(player.getName() + " used a " + card.getName() + " on you, he saw your: "
+						+ target.getCard().getName());
+
+				addMessageToPlayers(player, target, players,
+						player.getName() + " used a " + card.getName() + " on " + target.getName());
+
 				break;
 			case BARON:
 				System.out.println("Baron " + target.getName() + " card: " + target.getCard() + " your name: "
@@ -201,30 +212,36 @@ public class GameState {
 					playerOut = "";
 				}
 
-				arm.setPrivateMessage(target.getName() + " has card: " + target.getCard().getName() + " " + playerOut);
-				arm.setPublicMessage(
+				player.addMessage(target.getName() + " has card: " + target.getCard().getName() + " vs your: "
+						+ player.getCard().getName() + " " + playerOut);
+
+				target.addMessage(player.getName() + " used a " + card.getName() + " on you, he had "
+						+ player.getCard().getName() + " vs your: " + target.getCard().getName() + " " + playerOut);
+
+				addMessageToPlayers(player, target, players,
 						player.getName() + " used a " + card.getName() + " on " + target.getName() + playerOut);
+
 				break;
 			case HANDMAID:
 				player.activateHandMaidProtection();
 				System.out.println("HandMaid: player has protection");
-				arm.setPrivateMessage("You used handmaid");
-				arm.setPublicMessage(player.getName() + " used a " + card.getName());
+
+				player.addMessage("You used handmaid");
+				addMessageToPlayers(player, players, player.getName() + " used a " + card.getName());
 				break;
 			case PRINCE:
 				deck.discard.add(target.getCard());
 				if (target.getCard().equals(Card.PRINCESS)) {
 					target.setActiveInRound(false);
-					arm.setPrivateMessage(
-							"You used Prince on " + target.getName() + " he had the princess, he is out of the round");
-					arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName()
-							+ " he had the princess and is out.");
+
+					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " on "
+							+ target.getName() + " he had the princess and is out.");
+
 				} else {
 					System.out.println("principe " + target.getName() + "card: " + target.getCard());
-					arm.setPrivateMessage("You used Prince on player: " + target.getName() + " he discarded card: "
-							+ target.getCard().getName());
-					arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName()
-							+ " he discarded a " + target.getCard().getName());
+
+					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " on "
+							+ target.getName() + " he discarded a " + target.getCard().getName());
 
 					target.discardCard();
 					target.getHand().getCards().add(deck.drawCard(true));
@@ -241,20 +258,26 @@ public class GameState {
 				player.discardCard();
 				player.getHand().getCards().add(tmpCard);
 
-				arm.setPrivateMessage("You used King on player:" + target.getName() + " you gave him/her a "
+				player.addMessage("You used King on player:" + target.getName() + " you gave a "
 						+ target.getCard().getName() + " he gave you a: " + player.getCard().getName());
-				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " on " + target.getName());
+
+				target.addMessage(player.getName() + " used a " + card.getName() + " on you, you gave a "
+						+ player.getCard().getName() + " he gave you a: " + target.getCard().getName());
+
+				addMessageToPlayers(player, target, players,
+						player.getName() + " used a " + card.getName() + " on " + target.getName());
 				break;
 			case COUNTESS:
 				System.out.println("Condesa: ha tirado la condesa, nada pasa");
-				arm.setPrivateMessage("You used the Countess");
-				arm.setPublicMessage(player.getName() + " used a: " + card.getName());
+
+				addMessageToPlayers(players, player.getName() + " used a: " + card.getName());
+
 				break;
 			case PRINCESS:
 				System.out.println("Princesa: el jugador pierde el juego");
 				player.setActiveInRound(false);
-				arm.setPrivateMessage("You used the Princess, you are out of the round.");
-				arm.setPublicMessage(player.getName() + " used a " + card.getName() + " he/her is out.");
+
+				addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " he is out.");
 				break;
 			default:
 				break;
@@ -262,13 +285,18 @@ public class GameState {
 		}
 
 		arm.setValidAction(true);
-		if (hasGameEnded() || deck.cards.size() == 1) {
+		if (hasRoundEnded() || deck.cards.size() == 1) {
 			Player winnerPlayer = selectWinner();
 
-			arm.setPrivateMessage(arm.getPrivateMessage() + "\n " + winnerPlayer.getName() + " won with highest card: "
-					+ winnerPlayer.getCard().getName());
-			arm.setPublicMessage(arm.getPublicMessage() + "\n  " + winnerPlayer.getName() + " won with highest card: "
-					+ winnerPlayer.getCard().getName());
+			addMessageToPlayers(players,
+					winnerPlayer.getName() + " won the round with highest card: " + winnerPlayer.getCard().getName());
+
+			if (hasGameEnded()) {
+				addMessageToPlayers(players,
+						winnerPlayer.getName() + " Won the whole game and a date with the Princess, grats");
+				gameInProgress = false;
+				return arm;
+			}
 
 			newRound();
 			return arm;
@@ -288,7 +316,7 @@ public class GameState {
 		return players.get(playerNumberOnTurn);
 	}
 
-	private boolean hasGameEnded() {
+	private boolean hasRoundEnded() {
 		int playersActive = 0;
 		for (Player player : players) {
 			if (player.getActiveInRound()) {
@@ -296,8 +324,29 @@ public class GameState {
 			}
 		}
 		if (playersActive == 1) {
-			gameHasEnded = true;
+			roundHasEnded = true;
 			return true;
+		}
+		return false;
+	}
+
+	private boolean hasGameEnded() {
+		int winningNumber = 0;
+		switch (players.size()) {
+		case 2:
+			winningNumber = 2;
+			break;
+		case 3:
+			winningNumber = 5;
+			break;
+		case 4:
+			winningNumber = 4;
+			break;
+		}
+		for (Player player : players) {
+			if (player.getNumberOfWins() == winningNumber) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -326,11 +375,38 @@ public class GameState {
 	}
 
 	public GameStatusInfoMessage getPlayerInfo(String playerName) {
-		return new GameStatusInfoMessage(findPlayer(playerName), getPlayers(), deck.cards.size(), deck.discard);
+		return new GameStatusInfoMessage(findPlayer(playerName), getPlayers(), deck.cards.size(), deck.discard,
+				gameInProgress);
 	}
 
-	public boolean isGameHasEnded() {
-		return gameHasEnded;
+	public void addMessageToPlayers(List<Player> players, String message) {
+		addMessageToPlayers(null, players, message);
+	}
+
+	public void addMessageToPlayers(Player player, List<Player> players, String message) {
+		for (Player player2 : players) {
+			if (player == null || !player2.equals(player)) {
+				player2.addMessage(message);
+			}
+		}
+	}
+
+	public void addMessageToPlayers(Player player, Player player2, List<Player> players, String message) {
+		for (Player check : players) {
+			if ((player == null || !check.equals(player)) && (player2 == null || !check.equals(player2))) {
+				check.addMessage(message);
+			}
+		}
+	}
+
+	public void removeMessagesFromAllPlayers() {
+		for (Player player : players) {
+			player.removeAllMessages();
+		}
+	}
+
+	public boolean isRoundHasEnded() {
+		return roundHasEnded;
 	}
 
 	public Deck getDeck() {
@@ -348,4 +424,9 @@ public class GameState {
 	public void setPlayers(List<Player> players) {
 		this.players = players;
 	}
+
+	public boolean isGameInProgress() {
+		return gameInProgress;
+	}
+
 }

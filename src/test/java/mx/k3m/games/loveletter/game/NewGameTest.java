@@ -11,11 +11,11 @@ public class NewGameTest {
 		// players.add(new Player("karlo4"));
 		// GameState gm = new GameState(players);
 		//
-		// while(!gm.isGameHasEnded()) {
+		// while(!gm.isRoundHasEnded()) {
 		// for (Player player : players) {
 		// gm.takeTurn(player);
 		//
-		// if(gm.isGameHasEnded())
+		// if(gm.isRoundHasEnded())
 		// break;
 		//
 		// for (Player target : players) {

@@ -49,6 +49,16 @@ var wsclient = (function() {
                     addOnlineUser(activeUsers[i]);
                 }
             } else if (message.gameStatus){
+            	if(message.gameStatus.user != null){
+	            	var userMessages = message.gameStatus.user.messages;
+	            	var messages = $("#messages");
+	            	for(var i = 0; i < userMessages.length; i++){
+	            		$('<div class="message"><p>' + $('<p/>').text(userMessages[i]).html() + '</p></div>').appendTo(messages);
+	        		}
+	            	var element = document.getElementById('messages');
+	            	element.scrollTop = element.scrollHeight - element.clientHeight;
+            	}
+            	
             	updateGameComponents(message.gameStatus);
             } else if (message.actionStatus){
             	updateGameComponentsOnAction(message.actionStatus);
@@ -235,6 +245,14 @@ var wsclient = (function() {
     	$('.selectedPlayer').remove();
     	$('.cardPlayedSelected').remove();
     	
+    	
+    	if(gameStatus.gameInProgress){
+    		$('#newGame').remove();
+    	} else {
+    		var $actionButton = $('<button id="newGame" onclick="wsclient.newGame();">New Game</button>;');
+    		$actionButton.appendTo($("#actionButtons"));
+    	}
+    	
     	if($('.cardGuessSelected')[0]){
     		$('.cardGuessSelected')[0].classList.remove('cardGuessSelected');
     	}
@@ -393,6 +411,11 @@ var wsclient = (function() {
     
     function newGame() {
     	ws.send("new game");
+    }
+    
+    function ready(ready) {
+    	
+    	ws.send("Ready: " + ready);
     }
     
 //    function sendAction(){

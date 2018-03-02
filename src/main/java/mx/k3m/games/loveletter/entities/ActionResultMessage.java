@@ -4,13 +4,27 @@ public class ActionResultMessage {
 
 	private Boolean validAction;
 	private String privateMessage;
-	private String publicMessage;
+	// private List<String> publicMessages;
 
-	public ActionResultMessage(Boolean validAction, String privateMessage, String publicMessage) {
+	public ActionResultMessage() {
+		this.validAction = false;
+		this.privateMessage = "";
+		// this.publicMessages = new ArrayList<>();
+	}
+
+	public ActionResultMessage(Boolean validAction, String privateMessage) {
 		this.validAction = validAction;
 		this.privateMessage = privateMessage;
-		this.publicMessage = publicMessage;
+		// this.publicMessages = publicMessage;
 	}
+
+	// public void addPrivateMessage(String message) {
+	// this.privateMessages.add(message);
+	// }
+
+	// public void addPublicMessage(String message) {
+	// this.publicMessages.add(message);
+	// }
 
 	public Boolean getValidAction() {
 		return validAction;
@@ -28,12 +42,12 @@ public class ActionResultMessage {
 		this.privateMessage = privateMessage;
 	}
 
-	public String getPublicMessage() {
-		return publicMessage;
-	}
-
-	public void setPublicMessage(String publicMessage) {
-		this.publicMessage = publicMessage;
-	}
+	// public List<String> getPublicMessages() {
+	// return publicMessages;
+	// }
+	//
+	// public void setPublicMessages(List<String> publicMessages) {
+	// this.publicMessages = publicMessages;
+	// }
 
 }

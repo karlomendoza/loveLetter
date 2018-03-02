@@ -13,12 +13,13 @@ public class GameStatusInfoMessage {
 
 	private final GameStatus gameStatus;
 
-	public GameStatusInfoMessage(Player user, List<Player> playersInfo, int deckSize, List<Card> discard) {
+	public GameStatusInfoMessage(Player user, List<Player> playersInfo, int deckSize, List<Card> discard,
+			Boolean gameInProgress) {
 
 		List<PlayerPublicInfo> otherPlayers = playersInfo.stream().filter(player -> !player.equals(user))
 				.map(player -> new PlayerPublicInfo(player)).collect(Collectors.toList());
 
-		this.gameStatus = new GameStatus(user, otherPlayers, deckSize, discard);
+		this.gameStatus = new GameStatus(user, otherPlayers, deckSize, discard, gameInProgress);
 	}
 
 	public GameStatus getGameStatus() {
@@ -31,12 +32,15 @@ public class GameStatusInfoMessage {
 		private int deckSize;
 		private final List<PlayerPublicInfo> playersInfo;
 		private List<Card> discard;
+		private Boolean gameInProgress;
 
-		private GameStatus(Player user, List<PlayerPublicInfo> playersInfo, int deckSize, List<Card> discard) {
+		private GameStatus(Player user, List<PlayerPublicInfo> playersInfo, int deckSize, List<Card> discard,
+				Boolean gameInProgress) {
 			this.user = user;
 			this.playersInfo = playersInfo;
 			this.deckSize = deckSize;
 			this.discard = discard;
+			this.gameInProgress = gameInProgress;
 		}
 
 		public Player getUser() {
@@ -57,6 +61,14 @@ public class GameStatusInfoMessage {
 
 		public void setDiscard(List<Card> discard) {
 			this.discard = discard;
+		}
+
+		public Boolean getGameInProgress() {
+			return gameInProgress;
+		}
+
+		public void setGameInProgress(Boolean gameInProgress) {
+			this.gameInProgress = gameInProgress;
 		}
 	}
 }
