@@ -1,7 +1,9 @@
 package mx.k3m.games.loveletter.websockets;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +23,7 @@ import com.google.gson.Gson;
 import mx.k3m.games.loveletter.entities.ActionInfoMessage;
 import mx.k3m.games.loveletter.entities.ActionResultMessage;
 import mx.k3m.games.loveletter.entities.GameState;
+import mx.k3m.games.loveletter.entities.Room;
 
 @ServerEndpoint(value = "/game")
 public class WebSocketGame {
@@ -28,12 +31,16 @@ public class WebSocketGame {
 	private static final String GUEST_PREFIX = "Guest";
 	private static final AtomicInteger connectionIds = new AtomicInteger(0);
 	private static final Set<WebSocketGame> connections = new CopyOnWriteArraySet<>();
+	private static List<Room> rooms = new ArrayList<>();
+	private static GameState gameState = new GameState();
 
 	private Session session;
 
 	private String nickname;
 
 	private String userName;
+
+	private Room room;
 
 	private Gson jsonProcessor;
 
@@ -43,8 +50,6 @@ public class WebSocketGame {
 
 	private static final Logger log = LoggerFactory.getLogger(WebSocketGame.class);
 
-	private static GameState gameState = new GameState();
-
 	@OnOpen
 	public void onOpen(Session session) {
 		this.session = session;
@@ -52,6 +57,7 @@ public class WebSocketGame {
 		// String message = String.format("* %s %s", nickname, "has joined.");
 		// broadcast(message);
 
+		this.room = null;
 		this.userName = session.getQueryString().replaceAll("userName=", "");
 		// TODO checar si se puede sacar el usuario del usuario
 		this.jsonProcessor = new Gson();
@@ -73,6 +79,16 @@ public class WebSocketGame {
 		// Never trust the client
 		// String filteredMessage = HTMLFilter.filter(message.toString());
 		// broadcast(filteredMessage);
+
+		if (message.equals("create room")) {
+			WebSocketGame userConnection = getActionUserConnection(this.userName);
+			userConnection.room = "1";
+		}
+
+		if (message.equals("join room")) {
+			WebSocketGame userConnection = getActionUserConnection(this.userName);
+			userConnection.room = "1";
+		}
 
 		// TODO aqui agregar carnita
 		if (message.equals("new game")) {

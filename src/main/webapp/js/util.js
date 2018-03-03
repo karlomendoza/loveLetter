@@ -22,6 +22,15 @@ function getSelectedCard(classToCheckForCardSelection){
 	return selection.getAttribute('src').replace('img/', '').replace('.png','');
 }
 
+function throwCard(playerName){
+	var cardNamePlayed = getSelectedCard('cardPlayedSelected');
+	if(cardNamePlayed == ''){
+		alert('You need to select a card from your hand to play.');
+		return false;
+	}
+	wsclient.sendAction(playerName, '', cardNamePlayed, '');
+}
+
 function playCard(playerName){
 	var cardNamePlayed = getSelectedCard('cardPlayedSelected');
 	if(cardNamePlayed == ''){

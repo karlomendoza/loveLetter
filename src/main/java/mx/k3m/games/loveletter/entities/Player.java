@@ -11,6 +11,7 @@ public class Player {
 	private Boolean handMaidProtection;
 	private Boolean activeInRound;
 	private List<String> messages;
+	private Boolean dumpingCard;
 
 	public Player() {
 
@@ -23,12 +24,14 @@ public class Player {
 		this.hand = new Hand();
 		this.activeInRound = true;
 		this.messages = new ArrayList<>();
+		this.dumpingCard = false;
 	}
 
 	public void initPlayerForNextRound() {
 		hand = new Hand();
 		handMaidProtection = false;
 		activeInRound = true;
+		dumpingCard = false;
 	}
 
 	public boolean canPlayCard(Card card) {
@@ -129,6 +132,14 @@ public class Player {
 
 	public void setMessages(List<String> messages) {
 		this.messages = messages;
+	}
+
+	public Boolean getDumpingCard() {
+		return dumpingCard;
+	}
+
+	public void setDumpingCard(Boolean dumpingCard) {
+		this.dumpingCard = dumpingCard;
 	}
 
 }

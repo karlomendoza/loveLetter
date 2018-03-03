@@ -58,10 +58,7 @@ var wsclient = (function() {
             	}
             	
             	updateGameComponents(message.gameStatus);
-            } else if (message.actionStatus){
-            	updateGameComponentsOnAction(message.actionStatus);
-            } 
-            else{
+            } else{
             	var messages = $("#messages");
             	if(message.privateMessage != ''){
             		//$actionButton = $('<span >' + message.privateMessage +  '</span><br/>');
@@ -186,49 +183,6 @@ var wsclient = (function() {
         ws.send(JSON.stringify({messageInfo : {from : sender, to : receiver, message : message}}));
     }
     
-    function updateGameComponentsOnAction(action){
-    	if(action.drawCard){
-    		for(var i = 0; i <= gameStatus.playersInfo; i++){
-    			if(action.player == gameStatus.playersInfo[i]){
-    				gameStatus.playersInfo[i].cardsInHand++;
-    			}
-    		}
-    	} else if (action.playCard){
-    		//action.result
-    		switch (action.playedCard) {
-			case "GUARD":
-				 
-				break;
-			case "PRIEST":
-				
-				break;
-
-			case "BARON":
-				
-				break;
-			case "HANDMAID":
-				
-				break;
-			case "PRINCE":
-				
-				break;
-			case "KING":
-				
-				break;
-			case "COUNTESS":
-				
-				break;
-			case "PRINCESS":
-				
-				break;
-			default:
-				break;
-			}
-    		
-		}
-    		action.playedCard
-    }
-    
     function updateGameComponents(gameStatus){
     	this.gameStatus = gameStatus; 
     	$('.removable').remove();
@@ -254,10 +208,19 @@ var wsclient = (function() {
     	var attachTriggersToCards = false;
     	
     	if(gameStatus.user.hand.cards.length == 2){
-    		attachTriggersToCards = true;
-    		$("#actionButton").remove();
-    		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Do it! </button>;');
-    		$actionButton.appendTo($("#actionButtons"));
+    		if(gameStatus.user.dumpingCard){
+        		attachTriggersToCards = true;
+        		$("#actionButton").remove();
+            	$("#throwCardButton").remove();
+            	var $actionButton = $('<button id="throwCardButton" onclick="throwCard(\'' + gameStatus.user.name + '\');">Throw card! </button>;');
+            	$actionButton.appendTo($("#actionButtons"));
+    		} else if (!gameStatus.user.dumpingCard){
+    			attachTriggersToCards = true;
+    			$("#throwCardButton").remove();
+        		$("#actionButton").remove();
+        		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Do it! </button>;');
+        		$actionButton.appendTo($("#actionButtons"));
+    		}
     	} else {
     		$("#actionButton").remove();
     		attachTriggersToCards = false;
@@ -308,12 +271,12 @@ var wsclient = (function() {
     	}
     	
     	if(player.activeInRound){
-    		playerInfo = playerInfo + '<div value="' + player.name + '" onclick="markSelectedUnselected(this, \'selectedPlayer\')" class="player">Player Name: ' + player.name;
+    		playerInfo = playerInfo + '<div value="' + player.name + '" onclick="markSelectedUnselected(this, \'selectedPlayer\')" class="player">' + player.name;
     	
     	
     		playerInfo = playerInfo + '<img src="img/player.png" style="width: 50px;"/></div>';
     	} else {
-    		playerInfo = playerInfo + '<div value="' + player.name + '" class="player">Player Name: ' + player.name;
+    		playerInfo = playerInfo + '<div value="' + player.name + '" class="player">' + player.name;
     		playerInfo = playerInfo + '<img src="img/playerOutOfRound.png" style="width: 50px;"/></div>';
     	}
     	
@@ -321,8 +284,10 @@ var wsclient = (function() {
 	    	for(var i = 0; i< player.hand.cards.length; i++){
 	    		hand = hand + player.hand.cards[i] + '<br/>';
 	    		var trigger = ' ';
-	    		if(attachTriggersToCards){
-	    			trigger = attachTriggers(player, player.hand.cards[i]);
+	    		if(player.dumpingCard){
+	    			trigger =  attachSimpleTriggers(player.hand.cards[i]);
+	    		} else if(attachTriggersToCards){
+	    			trigger = attachTriggers(player.hand.cards[i]);
 	    		}
 	    		playerInfo = playerInfo + '<img class="inHandCarts" style="padding-right: 5px;" src="img/' +  player.hand.cards[i] + '.png"' + trigger + '/>';
 	    	}
@@ -343,34 +308,15 @@ var wsclient = (function() {
     	return playerInfo;
     }
     
-    function attachTriggers(player, card){
-    	//'onclick="wsclient.sendAction(' + user + ',' +  target + ',' + card+ ',' + guardCardGuess + ');")'
+    function attachSimpleTriggers(){
+    	return 'onclick="markSelectedUnselected(this, \'cardPlayedSelected\');"'
+    }
+    
+    function attachTriggers(card){
     	if(card == 'GUARD'){
     		return 'onclick="markSelectedUnselected(this, \'cardPlayedSelected\'); markSelectedUnselected($(\'#cardsSelectorDiv\')[0], \'hidden\');"' ;
     	}
     	return 'onclick="markSelectedUnselected(this, \'cardPlayedSelected\');"'
-    	//TODO checar si se ocupa este codigo
-//    	switch(card) {
-//    	case "GUARD":
-//    		return 'onclick="playCard(' + player.name+ ',\'' + card + '\', true,true);"';
-//    		break;
-//    	case "PRIEST":
-//    		return 'onclick="playCard(' + player.name+ ',\'' + card + '\', true,false);"';
-//    	case "BARON":
-//    		return 'onclick="playCard(' + player.name+ ',\'' + card + '\', true,false);"';
-//    	case "PRINCE":
-//    		return 'onclick="playCard(' + player.name+ ',\'' + card + '\', true,false);"';
-//    	case "KING":
-//    		return 'onclick="playCard(' + player.name+ ',\'' + card + '\', true,false);"';
-//    		break;
-//    	case "HANDMAID":
-//    	case "COUNTESS":
-//    	case "PRINCESS":
-//    		//return 'onclick="wsclient.sendAction();"'
-//    		return 'onclick="wsclient.sendAction(\'' + player.name + '\', null' +  '' + ',\'' + card+ '\',' + 'null' + ');"'
-//            break;
-//        default:
-//    	}
     }
     
     /********* usuarios conectados *******/
@@ -408,9 +354,6 @@ var wsclient = (function() {
     	ws.send("Ready: " + ready);
     }
     
-//    function sendAction(){
-//    	ws.send(document.getElementById('action').value);
-//    }
     
     function sendAction(user, target, cardUsed, guardCardGuess){
     	ws.send(JSON.stringify(  {"user" : user, "target" : target, "cardUsed" : cardUsed, "guardCardGuess" : guardCardGuess}  ));

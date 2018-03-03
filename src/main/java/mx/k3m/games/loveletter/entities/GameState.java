@@ -61,6 +61,8 @@ public class GameState {
 		}
 		Card card = deck.drawCard(false);
 		player.getHand().getCards().add(card);
+		player.removeHandMaidProtection();
+		player.setDumpingCard(false);
 		return;
 	}
 
@@ -77,6 +79,9 @@ public class GameState {
 		ActionResultMessage arm = new ActionResultMessage();
 		boolean playerCanOnlyDumpCard = false;
 
+		Card card = null;
+		Card targetCard = null;
+
 		Player player = null;
 		Player target = null;
 		for (Player tmpPlayer : players) {
@@ -91,69 +96,78 @@ public class GameState {
 			return arm;
 		}
 
-		Card card = Card.valueOf(cardName);
-
-		boolean cardUsedRequiresTarget = true;
-
-		if (card.equals(Card.HANDMAID) || card.equals(Card.COUNTESS) || card.equals(Card.PRINCESS))
-			cardUsedRequiresTarget = false;
-
-		if (card.equals(Card.PRINCE) || card.equals(Card.KING)) {
-			if (player.getHand().getCards().contains(Card.COUNTESS)) {
-				arm.setPrivateMessage("You can't play the " + card.getName() + " if you have also the " + Card.COUNTESS
-						+ " on your hand.");
-				return arm;
-			}
-		}
-
 		if (!player.equals(playerOnTurn)) {
 			arm.setPrivateMessage("You are not the current player on turn");
 			return arm;
 		}
 
-		player.removeHandMaidProtection();
+		player.removeAllMessages();
 
-		if (cardUsedRequiresTarget) {
-			if (target == null) {
-				arm.setPrivateMessage("You need to select a player as a target");
-				return arm;
-			}
-			if (target.getHandMaidProtection()) {
-				arm.setPrivateMessage("Your target has protection from the handMaid,  choose another player");
-				return arm;
-			}
-			if (!target.getActiveInRound()) {
-				arm.setPrivateMessage("Your target is out of the round, choose another player");
-				return arm;
-			}
-
-			// just the prince can be used on himself
-			if (!card.equals(Card.PRINCE) && player.equals(target)) {
-				if (!(players.stream().filter(p -> p.getHandMaidProtection()).collect(Collectors.toList())
-						.size() == 1)) {
-					arm.setPrivateMessage(
-							"The only card that can target yourself is the Prince, or if there is no other player without Handmaid protection");
-					return arm;
-				} else {
-					playerCanOnlyDumpCard = true;
-				}
-
-			}
-		}
-
-		if (!player.canPlayCard(card)) {
-			arm.setPrivateMessage("You don't have the card: " + card.getName() + " in your hand.");
+		try {
+			card = Card.valueOf(cardName);
+		} catch (Exception ex) {
+			arm.setPrivateMessage("The card you are trying to use does not exists, plz dont eat cheetos and play");
 			return arm;
 		}
 
-		Card targetCard = null;
-		if (card.equals(Card.GUARD)) {
-			try {
-				targetCard = Card.valueOf(targetCardName);
-			} catch (Exception e) {
-				arm.setPrivateMessage(
-						"The card: " + targetCardName + " you are trying to guess with the Guard does not exists");
+		// check if player has no valid targets and hence is throwing its card
+		if ((players.stream().filter(p -> p.getHandMaidProtection()).collect(Collectors.toList())
+				.size() == numberOfActivePlayer() - 1)) {
+			if (!playerOnTurn.getHand().getCards().contains(Card.PRINCE)
+					&& !playerOnTurn.getHand().getCards().contains(Card.HANDMAID)) {
+				playerCanOnlyDumpCard = true;
+			}
+		}
+
+		// onyl make the validations for when he is not throwing the card
+		if (!playerCanOnlyDumpCard) {
+			boolean cardUsedRequiresTarget = true;
+			if (card.equals(Card.HANDMAID) || card.equals(Card.COUNTESS) || card.equals(Card.PRINCESS))
+				cardUsedRequiresTarget = false;
+
+			if (card.equals(Card.PRINCE) || card.equals(Card.KING)) {
+				if (player.getHand().getCards().contains(Card.COUNTESS)) {
+					arm.setPrivateMessage("You can't play the " + card.getName() + " if you have also the "
+							+ Card.COUNTESS + " on your hand.");
+					return arm;
+				}
+			}
+
+			if (cardUsedRequiresTarget) {
+				if (target == null) {
+					arm.setPrivateMessage("You need to select a player as a target");
+					return arm;
+				}
+				if (target.getHandMaidProtection()) {
+					arm.setPrivateMessage("Your target has protection from the handMaid,  choose another player");
+					return arm;
+				}
+				if (!target.getActiveInRound()) {
+					arm.setPrivateMessage("Your target is out of the round, choose another player");
+					return arm;
+				}
+
+				// just the prince can be used on himself
+				if (!card.equals(Card.PRINCE) && player.equals(target)) {
+					arm.setPrivateMessage("The only card that can target yourself is the Prince");
+					return arm;
+				}
+			}
+
+			if (!player.canPlayCard(card)) {
+				arm.setPrivateMessage("You don't have the card: " + card.getName() + " in your hand.");
 				return arm;
+			}
+
+			targetCard = null;
+			if (card.equals(Card.GUARD)) {
+				try {
+					targetCard = Card.valueOf(targetCardName);
+				} catch (Exception e) {
+					arm.setPrivateMessage(
+							"The card: " + targetCardName + " you are trying to guess with the Guard does not exists");
+					return arm;
+				}
 			}
 		}
 
@@ -175,31 +189,31 @@ public class GameState {
 					deck.discard.add(target.getCard());
 					target.setActiveInRound(false);
 
-					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " guessing "
-							+ targetCard.getName() + " on " + target.getName() + " he is out of the round.");
-
+					player.addMessage("You used a " + card.getName() + " on " + target.getName() + " guessing "
+							+ targetCard.getName() + " he is out of the round.");
+					addMessageToPlayers(player, players, player.getName() + " used a " + card.getName() + " on "
+							+ target.getName() + " guessing " + targetCard.getName() + " he is out of the round.");
 				} else {
-					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " guessing "
-							+ targetCard.getName() + " on " + target.getName() + " he did not had that card.");
-
+					player.addMessage("You used a " + card.getName() + " on " + target.getName() + " guessing "
+							+ targetCard.getName() + " he did not had that card.");
+					addMessageToPlayers(player, players, player.getName() + " used a " + card.getName() + " on "
+							+ target.getName() + " guessing " + targetCard.getName() + " he did not had that card.");
 				}
 				break;
 			case PRIEST:
 				System.out.println("player: " + target.getName() + "has card: " + target.getCard());
-
-				player.addMessage(target.getName() + " has card : " + target.getCard());
+				player.addMessage("You used a " + card.getName() + " on " + target.getName() + " he has card : "
+						+ target.getCard());
 				target.addMessage(player.getName() + " used a " + card.getName() + " on you, he saw your: "
 						+ target.getCard().getName());
-
 				addMessageToPlayers(player, target, players,
 						player.getName() + " used a " + card.getName() + " on " + target.getName());
-
 				break;
 			case BARON:
 				System.out.println("Baron " + target.getName() + " card: " + target.getCard() + " your name: "
 						+ player.getName() + " you card: " + player.getCard());
 
-				String playerOut = "Xx is out of the round";
+				String playerOut = " Xx is out of the round";
 				if (player.getCardNumber() < target.getCardNumber()) {
 					deck.discard.add(player.getCard());
 					player.setActiveInRound(false);
@@ -209,14 +223,14 @@ public class GameState {
 					target.setActiveInRound(false);
 					playerOut = playerOut.replaceAll("Xx", target.getName());
 				} else {
-					playerOut = "";
+					playerOut = " it's a tie";
 				}
 
-				player.addMessage(target.getName() + " has card: " + target.getCard().getName() + " vs your: "
-						+ player.getCard().getName() + " " + playerOut);
+				player.addMessage("You used a " + card.getName() + " on " + target.getName() + " he has card: "
+						+ target.getCard().getName() + " vs your: " + player.getCard().getName() + playerOut);
 
-				target.addMessage(player.getName() + " used a " + card.getName() + " on you, he had "
-						+ player.getCard().getName() + " vs your: " + target.getCard().getName() + " " + playerOut);
+				target.addMessage(player.getName() + " used a " + card.getName() + " on you, he has a "
+						+ player.getCard().getName() + " vs your: " + target.getCard().getName() + playerOut);
 
 				addMessageToPlayers(player, target, players,
 						player.getName() + " used a " + card.getName() + " on " + target.getName() + playerOut);
@@ -226,7 +240,7 @@ public class GameState {
 				player.activateHandMaidProtection();
 				System.out.println("HandMaid: player has protection");
 
-				player.addMessage("You used handmaid");
+				player.addMessage("You used a " + card.getName());
 				addMessageToPlayers(player, players, player.getName() + " used a " + card.getName());
 				break;
 			case PRINCE:
@@ -234,13 +248,19 @@ public class GameState {
 				if (target.getCard().equals(Card.PRINCESS)) {
 					target.setActiveInRound(false);
 
-					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " on "
+					player.addMessage("You used a " + card.getName() + " on " + target.getName()
+							+ " he had the princess and is out.");
+
+					addMessageToPlayers(player, players, player.getName() + " used a " + card.getName() + " on "
 							+ target.getName() + " he had the princess and is out.");
 
 				} else {
 					System.out.println("principe " + target.getName() + "card: " + target.getCard());
 
-					addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " on "
+					player.addMessage("You used a " + card.getName() + " on " + target.getName() + " he discarded a "
+							+ target.getCard().getName());
+
+					addMessageToPlayers(player, players, player.getName() + " used a " + card.getName() + " on "
 							+ target.getName() + " he discarded a " + target.getCard().getName());
 
 					target.discardCard();
@@ -258,7 +278,7 @@ public class GameState {
 				player.discardCard();
 				player.getHand().getCards().add(tmpCard);
 
-				player.addMessage("You used King on player:" + target.getName() + " you gave a "
+				player.addMessage("You used a " + card.getName() + " on " + target.getName() + " you gave a "
 						+ target.getCard().getName() + " he gave you a: " + player.getCard().getName());
 
 				target.addMessage(player.getName() + " used a " + card.getName() + " on you, you gave a "
@@ -270,14 +290,17 @@ public class GameState {
 			case COUNTESS:
 				System.out.println("Condesa: ha tirado la condesa, nada pasa");
 
-				addMessageToPlayers(players, player.getName() + " used a: " + card.getName());
+				player.addMessage("You used a " + card.getName());
+
+				addMessageToPlayers(player, players, player.getName() + " used a: " + card.getName());
 
 				break;
 			case PRINCESS:
 				System.out.println("Princesa: el jugador pierde el juego");
 				player.setActiveInRound(false);
 
-				addMessageToPlayers(players, player.getName() + " used a " + card.getName() + " he is out.");
+				player.addMessage("You used a " + card.getName() + " you should never throw the princess");
+				addMessageToPlayers(player, players, player.getName() + " used a " + card.getName() + " he is out.");
 				break;
 			default:
 				break;
@@ -298,6 +321,7 @@ public class GameState {
 				return arm;
 			}
 
+			addMessageToPlayers(players, "New Round, ready, fight!");
 			newRound();
 			return arm;
 		}
@@ -305,7 +329,23 @@ public class GameState {
 		playerOnTurn = nextActivePlayer();
 		takeTurn(playerOnTurn);
 
-		// GameStateFacade.getPlayerInfo(this, player);
+		// Check if the player on turn has valid targets for his cards
+		// just the prince can be used on himself
+		if (players.stream().filter(p -> p.getHandMaidProtection()).collect(Collectors.toList())
+				.size() == numberOfActivePlayer() - 1) {
+			if (!playerOnTurn.getHand().getCards().contains(Card.PRINCE)
+					&& !playerOnTurn.getHand().getCards().contains(Card.HANDMAID)) {
+				playerOnTurn.addMessage("No valid targets, you can only throw a card");
+				playerOnTurn.setDumpingCard(true);
+			}
+			if (playerOnTurn.getHand().getCards().contains(Card.PRINCE)) {
+				playerOnTurn.addMessage("Since there are no valid targets you can only use the Prince on yourself");
+			}
+			if (playerOnTurn.getHand().getCards().contains(Card.HANDMAID)) {
+				playerOnTurn.addMessage("Since there are no valid targets you can only use the Handmaid on yourself");
+			}
+		}
+
 		return arm;
 	}
 
@@ -316,14 +356,18 @@ public class GameState {
 		return players.get(playerNumberOnTurn);
 	}
 
-	private boolean hasRoundEnded() {
+	private int numberOfActivePlayer() {
 		int playersActive = 0;
 		for (Player player : players) {
 			if (player.getActiveInRound()) {
 				playersActive++;
 			}
 		}
-		if (playersActive == 1) {
+		return playersActive;
+	}
+
+	private boolean hasRoundEnded() {
+		if (numberOfActivePlayer() == 1) {
 			roundHasEnded = true;
 			return true;
 		}
