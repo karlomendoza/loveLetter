@@ -58,14 +58,56 @@ var wsclient = (function() {
             	}
             	
             	updateGameComponents(message.gameStatus);
+            } else if(message.roomInfo){
+            	if(message.roomInfo.joinedRoom){
+            		$("#roomsButtons").remove();
+            		$("#createRoom").remove();
+            		$('<button id="leaveRoom" onclick="wsclient.leaveRoom(); wsclient.cleanGameArea()">Leave Room </button>').prependTo($("#actionButtons"));
+            		$('<button id="newGame" onclick="wsclient.newGame()">New Game </button>').prependTo($("#actionButtons"));
+            		
+            		var userMessages = message.roomInfo.message;
+                	var messages = $("#messages");
+              		$('<div class="message"><p>' + $('<p/>').text(userMessages).html() + '</p></div>').hide().prependTo(messages).show('normal');
+            	} else {
+            		$("#leaveRoom").remove();
+            		$("#newGame").remove();
+            		$("#createRoom").remove();
+            		$('<button id="createRoom" onclick="wsclient.createRoom()">Create New Room</button>').prependTo($("#actionButtons"));
+            		
+            		if(message.roomInfo.ids != null && message.roomInfo.ids.length > 0){
+	            		var ids = message.roomInfo.ids;
+	            		
+	            		var roomsButtons = $("#roomsButtons");
+	        			if(roomsButtons.length == 0){
+	        				$('<div id="roomsButtons"></>').appendTo($("#rooms"));
+	        			}
+	        			roomsButtons = $("#roomsButtons");
+	            		if(ids.length == 1){
+		            		var id = ids[0];
+		            		$('<button id="' + id + '" onclick="wsclient.joinRoom('+id+ ')">Join room ' + id +' </button>').hide().prependTo(roomsButtons).show('normal');
+		            		var userMessages = message.roomInfo.message;
+		                	var messages = $("#messages");
+		              		$('<div class="message"><p>' + $('<p/>').text(userMessages).html() + '</p></div>').hide().prependTo(messages).show('normal');
+	            		} else {
+	            			for(var i = 0; i < ids.length; i++){
+	            				var id = ids[i];
+	            				var rooms = $("#rooms");
+	            				$('<button id="' + id + '" onclick="wsclient.joinRoom('+id+ ')">Join room ' + id +' </button>').hide().prependTo(roomsButtons).show('normal');
+	            			}
+	            		}
+            		}
+            	}
             } else{
             	var messages = $("#messages");
             	if(message.privateMessage != ''){
-            		//$actionButton = $('<span >' + message.privateMessage +  '</span><br/>');
             		$('<div class="message"><p>' + $('<p/>').text(message.privateMessage).html() + '</p></div>').prependTo(messages);
             	}
             }
         }
+    }
+    
+    function roomFunctions(){
+    	var rooms = $("#roomsButtons").remove();
     }
 
     function disconnect() {
@@ -183,6 +225,21 @@ var wsclient = (function() {
         ws.send(JSON.stringify({messageInfo : {from : sender, to : receiver, message : message}}));
     }
     
+    function cleanGameArea(){
+    	$('.removable').remove();
+    	$('.selectedPlayer').remove();
+    	$('.cardPlayedSelected').remove();
+    	if($('.cardGuessSelected')[0]){
+    		$('.cardGuessSelected')[0].classList.remove('cardGuessSelected');
+    	}
+    	$('#cardsSelectorDiv')[0].classList.add('hidden');
+    	$("#actionButton").remove();
+    	$("#throwCardButton").remove();
+    	$("#discardCards").remove();
+    	$('#gameAreaContent').remove();
+    	$("#deckCards").remove();
+    }
+    
     function updateGameComponents(gameStatus){
     	this.gameStatus = gameStatus; 
     	$('.removable').remove();
@@ -223,6 +280,7 @@ var wsclient = (function() {
     		}
     	} else {
     		$("#actionButton").remove();
+    		$("#throwCardButton").remove();
     		attachTriggersToCards = false;
     	}
     	
@@ -234,8 +292,12 @@ var wsclient = (function() {
     		if(players[i])
     		formatedStatus = formatedStatus + extractPlayerInfo(players[i], false, players.length, false);
     	}
-    	var divPlayers = $(document.createElement('div'));
-    	divPlayers.html(formatedStatus).appendTo($('#gameArea'));
+    	
+    	$('<div id="gameAreaContent"></>').html(formatedStatus).appendTo($("#gameArea"));
+    	
+    	
+    	//var divPlayers = $(document.createElement('div'));
+    	//divPlayers.html(formatedStatus).appendTo($('#gameArea'));
     	
     	if(gameStatus.discard){
     		$("#discardCards").remove();
@@ -302,9 +364,6 @@ var wsclient = (function() {
     	
     	
     	playerInfo = playerInfo + '<br/>Numero de victorias:' + player.numberOfWins + '</div>';
-//    	return '<div class="removable">' +  player.name + '<br/>' + hand + '<br/>' + 'Handmaid Protection:' + player.handMaidProtection +
-//    			'<br/>' + 'Jugador aun vivo:' + player.activeInRound + '<br/>' + 
-//    			'Numero de victorias:' + player.numberOfWins + '<br/><br/><br/>' + '</div>';
     	return playerInfo;
     }
     
@@ -345,13 +404,21 @@ var wsclient = (function() {
         return li;
     }
     
+    function createRoom(){
+    	ws.send("create room");
+    }
+    
+    function joinRoom(id){
+    	ws.send("join room " + id);
+    }
+    
     function newGame() {
     	ws.send("new game");
     }
     
-    function ready(ready) {
-    	
-    	ws.send("Ready: " + ready);
+    
+    function leaveRoom(){
+    	ws.send("leaveRoom");
     }
     
     
@@ -365,5 +432,9 @@ var wsclient = (function() {
         disconnect : disconnect,
         newGame : newGame,
         sendAction : sendAction,
+        createRoom : createRoom,
+        joinRoom : joinRoom,
+        leaveRoom : leaveRoom,
+        cleanGameArea : cleanGameArea,
     };
 })();

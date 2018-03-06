@@ -2,12 +2,12 @@ package mx.k3m.games.loveletter.entities;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import mx.k3m.games.loveletter.messages.GameStatusInfoMessage;
+import mx.k3m.games.loveletter.websockets.WebSocketGame;
 
 @ApplicationScoped
 public class GameState {
@@ -25,13 +25,13 @@ public class GameState {
 
 	}
 
-	public void createGame(Set<String> playerNames) {
+	public void createGame(List<WebSocketGame> playersSession) {
 		gameInProgress = true;
 
 		List<Player> players = new LinkedList<Player>();
 
-		playerNames.forEach(playerName -> {
-			players.add(new Player(playerName));
+		playersSession.forEach(playerName -> {
+			players.add(new Player(playerName.getUserName()));
 		});
 		initGameState(players);
 	}

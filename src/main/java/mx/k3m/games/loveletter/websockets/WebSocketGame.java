@@ -2,8 +2,10 @@ package mx.k3m.games.loveletter.websockets;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,17 +24,15 @@ import com.google.gson.Gson;
 
 import mx.k3m.games.loveletter.entities.ActionInfoMessage;
 import mx.k3m.games.loveletter.entities.ActionResultMessage;
-import mx.k3m.games.loveletter.entities.GameState;
 import mx.k3m.games.loveletter.entities.Room;
+import mx.k3m.games.loveletter.messages.RoomMessage;
 
 @ServerEndpoint(value = "/game")
 public class WebSocketGame {
 
-	private static final String GUEST_PREFIX = "Guest";
-	private static final AtomicInteger connectionIds = new AtomicInteger(0);
+	private static final AtomicInteger roomIds = new AtomicInteger(0);
 	private static final Set<WebSocketGame> connections = new CopyOnWriteArraySet<>();
-	private static List<Room> rooms = new ArrayList<>();
-	private static GameState gameState = new GameState();
+	private static Map<Integer, Room> rooms = new HashMap<>();
 
 	private Session session;
 
@@ -59,8 +59,9 @@ public class WebSocketGame {
 
 		this.room = null;
 		this.userName = session.getQueryString().replaceAll("userName=", "");
-		// TODO checar si se puede sacar el usuario del usuario
 		this.jsonProcessor = new Gson();
+
+		sendRoomIdsToUser(this);
 
 		// TODO implementar broadcast messages
 		// broadcast(message);
@@ -71,6 +72,8 @@ public class WebSocketGame {
 		connections.remove(this);
 		String message = String.format("* %s %s", nickname, "has disconnected.");
 		broadcast(message);
+
+		canCloseRoom();
 	}
 
 	@OnMessage
@@ -79,51 +82,99 @@ public class WebSocketGame {
 		// Never trust the client
 		// String filteredMessage = HTMLFilter.filter(message.toString());
 		// broadcast(filteredMessage);
+		WebSocketGame userConnection = getActionUserConnection(this.userName);
+
+		if (message.equals("getRooms")) {
+			sendRoomIdsToUser(userConnection);
+		}
 
 		if (message.equals("create room")) {
-			WebSocketGame userConnection = getActionUserConnection(this.userName);
-			userConnection.room = "1";
+			if (this.room != null) {
+				broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "You can only create a room when you are not on one")),
+						userConnection);
+				return;
+			}
+
+			int id = roomIds.getAndIncrement();
+			Room room = new Room(this, id);
+			userConnection.room = room;
+
+			rooms.put(id, room);
+			broadcastMessageToUser(jsonProcessor.toJson(new RoomMessage("You joined room " + id, true)), userConnection);
+
+			notifyRoomCreation(jsonProcessor.toJson(new RoomMessage(id, this.userName + " created new room: " + id, false)), connections);
+			return;
 		}
 
-		if (message.equals("join room")) {
-			WebSocketGame userConnection = getActionUserConnection(this.userName);
-			userConnection.room = "1";
+		if (message.startsWith("join room")) {
+			String roomNumber = message.replace("join room ", "");
+
+			try {
+				Room room = rooms.get(Integer.valueOf(roomNumber));
+				if (room.isFull()) {
+					broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "Room is full, join another one or create your own")),
+							userConnection);
+				}
+
+				broadcastMessageToUsers(jsonProcessor.toJson(new ActionResultMessage(false, this.userName + " joined the room")),
+						new HashSet<>(room.getPlayers()));
+
+				userConnection.room = room;
+				room.addPlayer(this);
+				broadcastMessageToUser(jsonProcessor.toJson(new RoomMessage("You joined room " + roomNumber, true)), userConnection);
+			} catch (Exception ex) {
+				broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "There was an error, please try again")), userConnection);
+			}
+			return;
 		}
 
-		// TODO aqui agregar carnita
+		// After this all actions should happen in a room, not being in a room is an error
+		if (this.room == null) {
+			broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "You are not in a room, get in a room to do this")), userConnection);
+			return;
+		}
+
+		if (message.equals("leaveRoom")) {
+			broadcastMessageToUsers(jsonProcessor.toJson(new ActionResultMessage(false, this.userName + " left the room")), new HashSet<>(room.getPlayers()));
+			canCloseRoom();
+			this.room = null;
+			sendRoomIdsToUser(userConnection);
+			return;
+		}
+
 		if (message.equals("new game")) {
-			// TODO add this validation again
-			// if (gameState.isGameInProgress()) {
-			WebSocketGame userConnection = getActionUserConnection(this.userName);
-			broadcastMessageToUsers(
-					jsonProcessor.toJson(new ActionResultMessage(false, "Can't start a game, one already in progress")),
-					userConnection);
-			// return;
-			// }
+			if (userConnection.room.getGameState().isGameInProgress()) {
+				broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "Can't start a game, one already in progress")), userConnection);
+				return;
+			}
+			if (userConnection.room.getPlayers().size() == 1) {
+				broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "Can't start a game, you are the only player in the room")),
+						userConnection);
+				return;
+			}
 
-			startNewGame();
+			this.room.startNewGame();
+			sendAllUserNewGameState(this.room);
+
 			return;
 		}
 
 		final ActionInfoMessage actionMessage = jsonProcessor.fromJson(message, ActionInfoMessage.class);
 		// If move is not valid
 		if (actionMessage.getUser().equals(this.userName)) {
-			ActionResultMessage actionResultMessage = gameState.takeAction(actionMessage.getUser(),
-					actionMessage.getCardUsed(), actionMessage.getTarget(), actionMessage.getGuardCardGuess());
+			ActionResultMessage actionResultMessage = userConnection.room.getGameState().takeAction(actionMessage.getUser(), actionMessage.getCardUsed(),
+					actionMessage.getTarget(), actionMessage.getGuardCardGuess());
 
 			if (!actionResultMessage.getValidAction()) {
-				WebSocketGame userConnection = getActionUserConnection(actionMessage.getUser());
-				broadcastMessageToUsers(jsonProcessor.toJson(actionResultMessage), userConnection);
+				broadcastMessageToUser(jsonProcessor.toJson(actionResultMessage), userConnection);
 			}
 
 			if (actionResultMessage.getValidAction()) {
-				sendAllUserNewGameState();
-				gameState.removeMessagesFromAllPlayers();
+				sendAllUserNewGameState(this.room);
+				userConnection.room.getGameState().removeMessagesFromAllPlayers();
 			}
 		} else {
-			WebSocketGame userConnection = getActionUserConnection(this.userName);
-			broadcastMessageToUsers(jsonProcessor.toJson(new ActionResultMessage(false, "That's cheating sir")),
-					userConnection);
+			broadcastMessageToUser(jsonProcessor.toJson(new ActionResultMessage(false, "That's cheating sir")), userConnection);
 		}
 
 	}
@@ -133,60 +184,10 @@ public class WebSocketGame {
 		log.error("Chat Error: " + t.toString(), t);
 	}
 
-	// protected void onTextMessage(CharBuffer charBuffer) throws IOException {
-	// if (charBuffer.toString().equals("new game")) {
-	// startNewGame();
-	// return;
-	// }
-	//
-	// final ActionInfoMessage actionMessage =
-	// jsonProcessor.fromJson(charBuffer.toString(), ActionInfoMessage.class);
-	//
-	// if (actionMessage.getUser().equals(this.userName)) { // If move is not valid
-	// ActionResultMessage actionResultMessage =
-	// gameState.takeAction(actionMessage.getUser(),
-	// actionMessage.getCardUsed(), actionMessage.getTarget(),
-	// actionMessage.getGuardCardGuess());
-	//
-	// if (!actionResultMessage.getValidAction() ||
-	// (!actionResultMessage.getPrivateMessage().equals(null)
-	// && !actionResultMessage.getPrivateMessage().equals(""))) {
-	// GameConnection userConnection =
-	// getActionUserConnection(actionMessage.getUser());
-	//
-	// userConnection.getWsOutbound()
-	// .writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(actionResultMessage)));
-	//
-	// actionResultMessage.setPrivateMessage("");
-	// if (actionResultMessage.getPublicMessage() != null
-	// && !actionResultMessage.getPublicMessage().equals(""))
-	// sendActionInfoToOtherUsers(actionResultMessage);
-	// }
-	//
-	// if (actionResultMessage.getValidAction())
-	// sendAllUserNewGameState();
-	// } else {
-	// GameConnection userConnection = getActionUserConnection(this.userName);
-	// userConnection.getWsOutbound().writeTextMessage(CharBuffer.wrap(jsonProcessor
-	// .toJson(new ActionResultMessage(false, "That's cheating sir", "That's
-	// cheating sir"))));
-	// }
-	// }
-
-	private void startNewGame() {
-		Set<String> userNames = new HashSet<>();
-
-		connections.forEach(connection -> userNames.add(connection.getUserName()));
-
-		gameState.createGame(userNames);
-		sendAllUserNewGameState();
-	}
-
-	private void sendAllUserNewGameState() {
-		connections.forEach(gameConnection -> {
+	private void sendAllUserNewGameState(Room room) {
+		room.getPlayers().forEach(gameConnection -> {
 			try {
-				gameConnection.session.getBasicRemote()
-						.sendText(jsonProcessor.toJson(gameState.getPlayerInfo(gameConnection.userName)));
+				gameConnection.session.getBasicRemote().sendText(jsonProcessor.toJson(room.getGameState().getPlayerInfo(gameConnection.userName)));
 			} catch (IOException e) {
 				// no idea como fucking fixearias esto, si un usuario se desconecta, rip el
 				// game, mandalos todos a la gaver?
@@ -201,54 +202,14 @@ public class WebSocketGame {
 		return userName;
 	}
 
-	/**
-	 * private void sendConnectionInfo(WsOutbound outbound) { final List<String>
-	 * activeUsers = getActiveUsers(); final ConnectionInfoMessage
-	 * connectionInfoMessage = new ConnectionInfoMessage(userName, activeUsers); try
-	 * {
-	 * outbound.writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(connectionInfoMessage)));
-	 * } catch (IOException e) { log.error("No se pudo enviar el mensaje", e); } }
-	 * 
-	 * private List<String> getActiveUsers() { final List<String> activeUsers = new
-	 * ArrayList<String>(); for (GameConnection connection : connections.values()) {
-	 * activeUsers.add(connection.getUserName()); } return activeUsers; }
-	 * 
-	 * // TODO enviar notificacion de conecion a otros usuarios private void
-	 * sendActionInfoToOtherUsers(ActionResultMessage message) { final
-	 * Collection<GameConnection> otherUsersConnections = connections.values(); for
-	 * (GameConnection connection : otherUsersConnections) { try { if
-	 * (!connection.equals(this)) {
-	 * connection.getWsOutbound().writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(message)));
-	 * } } catch (IOException e) { log.error("No se pudo enviar el mensaje", e); } }
-	 * }
-	 **/
+	private void sendRoomIdsToUser(WebSocketGame userConnection) {
+		List<Integer> roomsForButtons = new ArrayList<>();
+		for (Integer id : rooms.keySet()) {
+			roomsForButtons.add(id);
+		}
+		broadcastMessageToUser(jsonProcessor.toJson(new RoomMessage(roomsForButtons, null, false)), userConnection);
+	}
 
-	// private Collection<GameConnection> getAllChatConnectionsExceptThis() {
-	// final Collection<GameConnection> allConnections = connections.values();
-	// allConnections.remove(this);
-	// return allConnections;
-	// }
-
-	// TODO enviar notificacion de conecion a otros usuarios
-	// private void sendStatusInfoToOtherUsers(StatusInfoMessage message) {
-	// final Collection<GameConnection> otherUsersConnections =
-	// getAllChatConnectionsExceptThis();
-	// for (GameConnection connection : otherUsersConnections) {
-	// try {
-	// connection.getWsOutbound().writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(message)));
-	// } catch (IOException e) {
-	// log.error("No se pudo enviar el mensaje", e);
-	// }
-	// }
-	// }
-
-	/**
-	 * // TODO make this function only return the conections on a room private
-	 * GameConnection getAllConnections(String actionStartingUser) { for
-	 * (GameConnection connection : connections.values()) { if
-	 * (actionStartingUser.equals(connection.getUserName())) { return connection; }
-	 * } return null; }
-	 **/
 	private WebSocketGame getActionUserConnection(String actionStartingUser) {
 		for (WebSocketGame connection : connections) {
 			if (actionStartingUser.equals(connection.getUserName())) {
@@ -278,19 +239,17 @@ public class WebSocketGame {
 		}
 	}
 
-	private static void broadcastMessageToUsers(String jsonMsg, WebSocketGame user) {
+	private static void broadcastMessageToUser(String jsonMsg, WebSocketGame user) {
 		Set<WebSocketGame> users = new HashSet<>();
 		users.add(user);
 		broadcastMessageToUsers(jsonMsg, users);
 	}
 
-	private static void broadcastMessageToOtherUsers(String jsonMsg, WebSocketGame user) {
-		for (WebSocketGame client : connections) {
-			if (!client.equals(user)) {
+	private static void notifyRoomCreation(String jsonMsg, Set<WebSocketGame> usersToSend) {
+		for (WebSocketGame client : usersToSend) {
+			if (client.room == null) {
 				try {
-					synchronized (client) {
-						client.session.getBasicRemote().sendText(jsonMsg);
-					}
+					client.session.getBasicRemote().sendText(jsonMsg);
 				} catch (IOException e) {
 					log.debug("Chat Error: Failed to send message to client", e);
 					connections.remove(client);
@@ -326,21 +285,24 @@ public class WebSocketGame {
 		}
 	}
 
+	private void canCloseRoom() {
+		if (room != null) {
+			room.getPlayers().remove(this);
+			if (room.getPlayers().isEmpty())
+				rooms.remove(this.room.getId());
+		}
+	}
+
 	/**
 	 * private void broadcast(String msg) {
 	 * 
 	 * final List<String> activeUsers = getActiveUsers();
 	 * 
-	 * for (String client : activeUsers) { try { synchronized (client) { final
-	 * ConnectionInfoMessage connectionInfoMessage = new
-	 * ConnectionInfoMessage(userName, activeUsers); try {
-	 * outbound.writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(connectionInfoMessage)));
-	 * } catch (IOException e) { log.error("No se pudo enviar el mensaje", e); }
-	 * client.session.getBasicRemote().sendText(msg); } } catch (IOException e) {
-	 * log.debug("Chat Error: Failed to send message to client", e);
-	 * connections.remove(client); try { client.session.close(); } catch
-	 * (IOException e1) { // Ignore } String message = String.format("* %s %s",
-	 * client.nickname, "has been disconnected."); broadcast(message); } }
+	 * for (String client : activeUsers) { try { synchronized (client) { final ConnectionInfoMessage connectionInfoMessage = new
+	 * ConnectionInfoMessage(userName, activeUsers); try { outbound.writeTextMessage(CharBuffer.wrap(jsonProcessor.toJson(connectionInfoMessage))); }
+	 * catch (IOException e) { log.error("No se pudo enviar el mensaje", e); } client.session.getBasicRemote().sendText(msg); } } catch (IOException e) {
+	 * log.debug("Chat Error: Failed to send message to client", e); connections.remove(client); try { client.session.close(); } catch (IOException e1) {
+	 * // Ignore } String message = String.format("* %s %s", client.nickname, "has been disconnected."); broadcast(message); } }
 	 **/
 
 }
