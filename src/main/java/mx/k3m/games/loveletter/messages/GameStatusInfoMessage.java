@@ -9,8 +9,6 @@ import mx.k3m.games.loveletter.entities.PlayerPublicInfo;
 
 public class GameStatusInfoMessage {
 
-	// TODO This only needs to have access to the player public info
-
 	private final GameStatus gameStatus;
 
 	public GameStatusInfoMessage(Player user, List<Player> playersInfo, int deckSize, List<Card> discard,
