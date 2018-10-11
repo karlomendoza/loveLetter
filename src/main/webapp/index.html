@@ -61,6 +61,11 @@
 		    <div id="messageBoardArea" class="conversation ui-tabs-panel ui-widget-content ui-corner-bottom">
 		    	<p id="messages" class="messages"></p>
 		    </div>
+		    <div id="chatBoardArea" class="conversation ui-tabs-panel ui-widget-content ui-corner-bottom">
+		    	<p id="chatMessages" class="messages"></p>
+		    	Mensaje: <input type="text" id="chatMessage"/>
+		    	<button id="sendMessage" onclick="wsclient.sendChatMessage();"> Send Message</button>
+		    </div>
 		    <div id="deck" class="deckCards"></div>
 		</div>
 		

@@ -30,14 +30,10 @@ var wsclient = (function() {
         ws.onclose = function () {
             setConnected(false);
             document.getElementById('userName').value = '';
-            closeAllConversations();
         };
 
         function processMessage(message) {
-            if (message.messageInfo) {
-                showConversation(message.messageInfo.from);
-                addMessage(message.messageInfo.from, message.messageInfo.message, cleanWhitespaces(message.messageInfo.from) + 'conversation');
-            } else if (message.statusInfo) {
+            if (message.statusInfo) {
                 if (message.statusInfo.status == 'CONNECTED') {
                     addOnlineUser(message.statusInfo.user);
                 } else if (message.statusInfo.status == 'DISCONNECTED') {
@@ -58,6 +54,11 @@ var wsclient = (function() {
             	}
             	
             	updateGameComponents(message.gameStatus);
+            } else if (message.messageInfo){
+	            	var userMessage = message.messageInfo.message;
+	            	var messages = $("#chatMessages");
+            		$('<div class="message"><p>' + $('<p/>').text(userMessage).html() + '</p></div>').hide().prependTo(messages).show('normal');
+            	
             } else if(message.roomInfo){
             	if(message.roomInfo.joinedRoom){
             		$("#roomsButtons").remove();
@@ -196,13 +197,6 @@ var wsclient = (function() {
             document.getElementById(conversationId+'message').value = '';
         });
         return button;
-    }
-
-    function closeAllConversations() {
-        for (var i = $('#conversations').tabs('length'); i >= 0; i--) {
-            $('#conversations').tabs('remove', i-1);
-        }
-        $('#conversations').css({visibility : 'hidden'});
     }
 
     function createCloseButton(conversationId) {
@@ -421,6 +415,10 @@ var wsclient = (function() {
     	ws.send("leaveRoom");
     }
     
+    function sendChatMessage(){
+    	ws.send("chatMessage" + $("#chatMessage").val());
+    }
+    
     
     function sendAction(user, target, cardUsed, guardCardGuess){
     	ws.send(JSON.stringify(  {"user" : user, "target" : target, "cardUsed" : cardUsed, "guardCardGuess" : guardCardGuess}  ));
@@ -436,5 +434,6 @@ var wsclient = (function() {
         joinRoom : joinRoom,
         leaveRoom : leaveRoom,
         cleanGameArea : cleanGameArea,
+        sendChatMessage: sendChatMessage,
     };
 })();
