@@ -3,17 +3,7 @@
         "http://java.sun.com/dtd/web-app_2_3.dtd" >
 
 <web-app>
-    <display-name>Love letter</display-name>
-
-
-    <servlet>
-        <servlet-name>simpleWS</servlet-name>
-        <servlet-class>com.autentia.tutorial.websockets.SimpleWebSocketServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>simpleWS</servlet-name>
-        <url-pattern>/simple</url-pattern>
-    </servlet-mapping>
+    
 <!-- 
     <servlet>
         <servlet-name>wsChat</servlet-name>
