@@ -417,6 +417,7 @@ var wsclient = (function() {
     
     function sendChatMessage(){
     	ws.send("chatMessage" + $("#chatMessage").val());
+    	$("#chatMessage").val("");
     }
     
     
