@@ -1,7 +1,7 @@
 var wsclient = (function() {
 
     var ws = null;
-    var wsURI = 'ws://' + location.host  + '/loveletter/game';
+    var wsURI = 'ws://' + location.host  + '/game';
     
     var gameStatus = null;
     
