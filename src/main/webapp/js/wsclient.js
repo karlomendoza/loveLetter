@@ -264,13 +264,13 @@ var wsclient = (function() {
         		$("#actionButton").remove();
             	$("#throwCardButton").remove();
             	var $actionButton = $('<button id="throwCardButton" onclick="throwCard(\'' + gameStatus.user.name + '\');">Throw card! </button>;');
-            	$actionButton.appendTo($("#actionButtons"));
+            	$actionButton.appendTo($("#playerArea"));
     		} else if (!gameStatus.user.dumpingCard){
     			attachTriggersToCards = true;
     			$("#throwCardButton").remove();
         		$("#actionButton").remove();
-        		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Do it! </button>;');
-        		$actionButton.appendTo($("#actionButtons"));
+        		var $actionButton = $('<button id="actionButton" onclick="playCard(\'' + gameStatus.user.name + '\');">Play Card </button>;');
+        		$actionButton.appendTo($("#playerArea"));
     		}
     	} else {
     		$("#actionButton").remove();
