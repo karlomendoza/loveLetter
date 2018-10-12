@@ -27,6 +27,8 @@ import mx.k3m.games.loveletter.entities.ActionResultMessage;
 import mx.k3m.games.loveletter.entities.Room;
 import mx.k3m.games.loveletter.messages.MessageInfoMessage;
 import mx.k3m.games.loveletter.messages.RoomMessage;
+import mx.k3m.games.loveletter.messages.StatusInfoMessage;
+import mx.k3m.games.loveletter.messages.StatusInfoMessage.STATUS;
 
 @ServerEndpoint(value = "/game")
 public class WebSocketGame {
@@ -55,24 +57,21 @@ public class WebSocketGame {
 	public void onOpen(Session session) {
 		this.session = session;
 		connections.add(this);
-		String message = String.format("* %s %s", nickname, "has joined.");
-		broadcast(message);
+
+		this.jsonProcessor = new Gson();
+		this.userName = session.getQueryString().replaceAll("userName=", "");
+		broadcast(jsonProcessor.toJson(new StatusInfoMessage(userName, STATUS.CONNECTED)));
 
 		this.room = null;
-		this.userName = session.getQueryString().replaceAll("userName=", "");
-		this.jsonProcessor = new Gson();
-
+		sendUsersConnectedToUser(this);
 		sendRoomIdsToUser(this);
-
-		// TODO implementar broadcast messages
-		// broadcast(message);
 	}
 
 	@OnClose
 	public void end(Session session) {
 		connections.remove(this);
-		String message = String.format("* %s %s", nickname, "has disconnected.");
-		broadcast(message);
+
+		broadcast(jsonProcessor.toJson(new StatusInfoMessage(this.userName, STATUS.DISCONNECTED)));
 
 		canCloseRoom();
 	}
@@ -237,6 +236,18 @@ public class WebSocketGame {
 		return userName;
 	}
 
+	private void sendUsersConnectedToUser(WebSocketGame userConnection) {
+		List<StatusInfoMessage> usersOnline = new ArrayList<>();
+//		new StatusInfoMessage(userName, STATUS.CONNECTED)
+		for (WebSocketGame connection : connections) {
+			if (!connection.equals(userConnection))
+				broadcastMessageToUser(
+						jsonProcessor.toJson(new StatusInfoMessage(connection.userName, STATUS.CONNECTED)),
+						userConnection);
+		}
+
+	}
+
 	private void sendRoomIdsToUser(WebSocketGame userConnection) {
 		List<Integer> roomsForButtons = new ArrayList<>();
 		for (Integer id : rooms.keySet()) {
@@ -262,7 +273,7 @@ public class WebSocketGame {
 		for (WebSocketGame client : connections) {
 			try {
 				synchronized (client) {
-					if (sendToLobbyOnly && client.room == null) {
+					if (!sendToLobbyOnly || (sendToLobbyOnly && client.room == null)) {
 						client.session.getBasicRemote().sendText(jsonMsg);
 					}
 				}
