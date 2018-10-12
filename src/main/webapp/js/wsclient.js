@@ -99,6 +99,8 @@ var wsclient = (function() {
             		}
             	}
             } else{
+            	
+            	addOnlineUser()
             	var messages = $("#messages");
             	if(message.privateMessage != ''){
             		$('<div class="message"><p>' + $('<p/>').text(message.privateMessage).html() + '</p></div>').prependTo(messages);
